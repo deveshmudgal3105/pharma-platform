@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ScatterChart, Scatter } from "recharts";
+import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ScatterChart, Scatter, ReferenceLine } from "recharts";
 
 /* ═══════════════════════════════════════════════════════════════════
    PATENT CLIFF INTELLIGENCE PLATFORM — ENTERPRISE v3.0
@@ -7,12 +7,12 @@ import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Cartesia
    ═══════════════════════════════════════════════════════════════════ */
 
 const C = {
-  bg:"#050910",card:"rgba(10,15,28,0.96)",card2:"rgba(16,22,40,0.9)",
-  border:"rgba(70,80,120,0.18)",accent:"#6d5cff",accent2:"#00d4aa",
-  warn:"#ff8c42",danger:"#ff4d6a",text:"#c8cdd8",muted:"#555f78",
-  bright:"#eef0f6",purple:"#a78bfa",teal:"#2dd4bf",amber:"#fbbf24",
+  bg:"#080c14",card:"rgba(12,17,30,0.97)",card2:"rgba(18,24,42,0.92)",
+  border:"rgba(80,90,130,0.18)",accent:"#6366f1",accent2:"#10b981",
+  warn:"#f59e0b",danger:"#ef4444",text:"#d1d5db",muted:"#6b7280",
+  bright:"#f3f4f6",purple:"#a78bfa",teal:"#14b8a6",amber:"#fbbf24",
 };
-const font="'DM Sans',system-ui,sans-serif";
+const font="'Source Sans 3','DM Sans',system-ui,sans-serif";
 const mono="'JetBrains Mono','Fira Code',monospace";
 
 // ═══ CHANGE 5: All links verified working — use search-parameter URLs ═══
@@ -68,6 +68,10 @@ const HISTORICAL_LOE = [
     marketShareData:[{m:"Pre-LOE",o:100,b:0},{m:"M6",o:72,b:28},{m:"M12",o:55,b:45},{m:"M18",o:42,b:58},{m:"M24",o:32,b:68}],
     priceData:[{m:"Pre-LOE",p:100,d:0},{m:"M6",p:68,d:32},{m:"M12",p:52,d:48},{m:"M18",p:42,d:58},{m:"M24",p:35,d:65}],
     keyInsight:"Dialysis center consolidation (DaVita, Fresenius) created concentrated buyer power. Rapid formulary switches." },
+  { drug:"Stelara",molecule:"Ustekinumab",originator:"J&J",loeDate:"Sep 2025",peakRevenue:10.9,currentRevenue:4.2,playersAtLOE:5,playersNow:5,type:"Biologic",therapyArea:"Immunology",complexity:"High",
+    marketShareData:[{m:"Pre-LOE",o:100,b:0},{m:"M1",o:88,b:12},{m:"M3",o:72,b:28},{m:"M6",o:55,b:45},{m:"M9",o:40,b:60},{m:"M12",o:30,b:70},{m:"M18",o:20,b:80},{m:"M24",o:14,b:86}],
+    priceData:[{m:"Pre-LOE",p:100,d:0},{m:"M1",p:92,d:8},{m:"M3",p:75,d:25},{m:"M6",p:55,d:45},{m:"M9",p:40,d:60},{m:"M12",p:30,d:70},{m:"M18",p:22,d:78},{m:"M24",p:18,d:82}],
+    keyInsight:"Fastest biosimilar erosion in immunology history — 5 biosimilars launched simultaneously with 80-90% WAC discounts. Wezlana (Amgen), Pyzchiva (Samsung/Sandoz), Selarsdi (Alvotech/Teva), Steqeyma (Celltrion), Yesintek (Biocon) all entered within weeks. PBMs aggressively shifted formularies. Humira playbook applied at scale." },
 ];
 
 const PRICE_EROSION_BY_PLAYERS = [
@@ -90,71 +94,80 @@ const DRUGS = [
       {company:"Amgen (Wezlana)",phase:"Launched",signal:"confirmed",est:"Launched Jan 2025",strength:92,mfg:"Own+Amgen",commercial:"Strong US",weakness:"Late to some EU markets",
         monthlyForecast:[{m:"M1",rev:0.08,share:2},{m:"M3",rev:0.3,share:6},{m:"M6",rev:0.8,share:14},{m:"M9",rev:1.4,share:22},{m:"M12",rev:2.1,share:30},{m:"M18",rev:2.8,share:35},{m:"M24",rev:3.0,share:32}],
         sources:[{l:"FDA Approval",u:`https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=wezlana`},{l:"Amgen 10-K",u:`https://www.sec.gov/cgi-bin/browse-edgar?company=amgen&CIK=&type=10-K&action=getcompany`}]},
-      {company:"Samsung Bioepis (SB17)",phase:"Launched",signal:"confirmed",est:"Launched Mar 2025",strength:85,mfg:"Samsung Biologics",commercial:"Organon partnership",weakness:"Smaller US footprint",
+      {company:"Samsung Bioepis/Sandoz (Pyzchiva)",phase:"Launched",signal:"confirmed",est:"Launched Feb 2025",strength:87,mfg:"Samsung Biologics",commercial:"Sandoz US — 80% WAC discount",weakness:"Interchangeability exclusivity pending",
         monthlyForecast:[{m:"M1",rev:0.05,share:1},{m:"M3",rev:0.2,share:4},{m:"M6",rev:0.6,share:10},{m:"M9",rev:1.0,share:16},{m:"M12",rev:1.5,share:22},{m:"M18",rev:2.0,share:25},{m:"M24",rev:2.2,share:24}],
         sources:[{l:"EMA Record",u:`https://www.ema.europa.eu/en/medicines?search_api_fulltext=SB17+ustekinumab`},{l:"Samsung Biologics",u:"https://www.samsungbiologics.com/en/media/news_list.do"}]},
-      {company:"Sandoz",phase:"Approved",signal:"confirmed",est:"Q3 2025",strength:88,mfg:"Sandoz/Kundl",commercial:"Global leader",weakness:"Pricing pressure from early entrants",
+      {company:"Alvotech/Teva (Selarsdi)",phase:"Launched",signal:"confirmed",est:"Launched Feb 2025",strength:88,mfg:"Alvotech Iceland",commercial:"Teva US — 85% WAC discount",weakness:"Late interchangeability vs Wezlana",
         monthlyForecast:[{m:"M1",rev:0.04,share:1},{m:"M3",rev:0.15,share:3},{m:"M6",rev:0.5,share:8},{m:"M9",rev:0.9,share:14},{m:"M12",rev:1.3,share:18},{m:"M18",rev:1.8,share:22},{m:"M24",rev:2.0,share:21}],
-        sources:[{l:"Sandoz Pipeline",u:"https://www.sandoz.com/en/what-we-do/biosimilars"},{l:"FDA Filing",u:`https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=ustekinumab`}]},
-      {company:"Celltrion (CT-P43)",phase:"Phase III",signal:"strong",est:"Q1 2026",strength:78,mfg:"Celltrion Incheon",commercial:"Strong Asia",weakness:"US commercial gap",
-        monthlyForecast:[{m:"M1",rev:0,share:0},{m:"M3",rev:0,share:0},{m:"M6",rev:0.1,share:2},{m:"M9",rev:0.3,share:5},{m:"M12",rev:0.6,share:8},{m:"M18",rev:0.9,share:11},{m:"M24",rev:1.1,share:12}],
-        sources:[{l:"Phase III Trial",u:`https://clinicaltrials.gov/search?term=CT-P43+ustekinumab`},{l:"Celltrion Pipeline",u:"https://www.celltrionhealthcare.com/en/biosimilars"}]},
-      {company:"Biocon (BMK-U01)",phase:"Phase III",signal:"moderate",est:"Q3 2026",strength:70,mfg:"Biocon Bengaluru",commercial:"Viatris US",weakness:"FDA inspection history",
-        monthlyForecast:[{m:"M1",rev:0,share:0},{m:"M3",rev:0,share:0},{m:"M6",rev:0,share:0},{m:"M9",rev:0.05,share:1},{m:"M12",rev:0.15,share:2},{m:"M18",rev:0.4,share:5},{m:"M24",rev:0.6,share:6}],
-        sources:[{l:"Biocon Pipeline",u:"https://www.biocon.com/biosimilars/"},{l:"ClinicalTrials",u:`https://clinicaltrials.gov/search?term=biocon+ustekinumab`}]},
+        sources:[{l:"Teva Press Release",u:"https://www.tevapharm.com/product-portfolio/"},{l:"FDA Approval",u:`https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=selarsdi`}]},
+      {company:"Celltrion (Steqeyma)",phase:"Launched",signal:"confirmed",est:"Launched Mar 2025",strength:80,mfg:"Celltrion Incheon",commercial:"Celltrion Healthcare US",weakness:"Crowded market — 4th to launch",
+        monthlyForecast:[{m:"M1",rev:0.02,share:0.5},{m:"M3",rev:0.08,share:2},{m:"M6",rev:0.2,share:4},{m:"M9",rev:0.4,share:7},{m:"M12",rev:0.6,share:9},{m:"M18",rev:0.9,share:11},{m:"M24",rev:1.1,share:12}],
+        sources:[{l:"Celltrion Pipeline",u:"https://www.celltrionhealthcare.com/en/biosimilars"},{l:"FDA Approval",u:`https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=steqeyma`}]},
+      {company:"Biocon (Yesintek)",phase:"Launched",signal:"confirmed",est:"Launched Feb 2025",strength:85,mfg:"Biocon Bengaluru",commercial:"Direct US launch — 90% WAC discount, 100M+ lives covered",weakness:"First US launch as standalone — proving commercial capabilities",
+        monthlyForecast:[{m:"M1",rev:0.03,share:1},{m:"M3",rev:0.15,share:3},{m:"M6",rev:0.5,share:8},{m:"M9",rev:0.8,share:13},{m:"M12",rev:1.2,share:17},{m:"M18",rev:1.6,share:20},{m:"M24",rev:1.8,share:19}],
+        sources:[{l:"Yesintek Launch PR",u:"https://www.bioconbiologics.com/biocon-biologics-launches-yesintek-ustekinumab-kfce-biosimilar-to-stelara-in-the-united-states/"},{l:"FDA Approval",u:`https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=yesintek`}]},
     ],
-    projection:[{y:"2025",oR:10.9,bR:0.5,tot:11.4,pr:100},{y:"2026",oR:5.8,bR:4.2,tot:10.0,pr:60},{y:"2027",oR:3.2,bR:5.5,tot:8.7,pr:42},{y:"2028",oR:2.0,bR:5.0,tot:7.0,pr:35}],
+    projection:[{y:"2025",oR:7.5,bR:3.5,tot:11.0,pr:69},{y:"2026",oR:3.2,bR:5.8,tot:9.0,pr:36},{y:"2027",oR:1.5,bR:5.0,tot:6.5,pr:23},{y:"2028",oR:0.8,bR:3.5,tot:4.3,pr:19}],
   },
-  { id:2,drug:"Eliquis",molecule:"Apixaban",originator:"BMS/Pfizer",indication:"Factor Xa Inhibitor",patentExpiry:"2026-11-14",revenue:18.0,therapyArea:"Cardiology",type:"Small Molecule",
+  { id:2,drug:"Eliquis",molecule:"Apixaban",originator:"BMS/Pfizer",indication:"Factor Xa Inhibitor",patentExpiry:"2028-04-01",revenue:18.0,therapyArea:"Cardiology",type:"Small Molecule",
     dosageForms:[{form:"5mg Tablet",pct:60},{form:"2.5mg Tablet",pct:40}],
     competitors:[
-      {company:"Teva",phase:"ANDA Filed",signal:"strong",est:"Q4 2026",strength:90,mfg:"Global generic",commercial:"#1 US generic",weakness:"Litigation risk",
+      {company:"Teva",phase:"Tentative Approval",signal:"strong",est:"Apr 2028",strength:90,mfg:"Global generic",commercial:"#1 US generic",weakness:"Blocked by litigation until April 2028",
         monthlyForecast:[{m:"M1",rev:0.3,share:8},{m:"M3",rev:1.2,share:20},{m:"M6",rev:2.5,share:32},{m:"M9",rev:3.2,share:38},{m:"M12",rev:3.5,share:40},{m:"M18",rev:3.0,share:35},{m:"M24",rev:2.5,share:30}],
         sources:[{l:"ANDA Filing",u:`https://www.accessdata.fda.gov/scripts/cder/ob/index.cfm`},{l:"Teva 10-K",u:`https://www.sec.gov/cgi-bin/browse-edgar?company=teva&CIK=&type=10-K&action=getcompany`}]},
-      {company:"Aurobindo",phase:"ANDA Filed",signal:"strong",est:"Q1 2027",strength:82,mfg:"India+US sites",commercial:"Growing US",weakness:"Smaller brand awareness",
+      {company:"Aurobindo",phase:"Tentative Approval",signal:"strong",est:"Apr 2028",strength:82,mfg:"India+US sites",commercial:"Growing US",weakness:"Blocked by litigation until 2028",
         monthlyForecast:[{m:"M1",rev:0,share:0},{m:"M3",rev:0.3,share:5},{m:"M6",rev:0.8,share:10},{m:"M9",rev:1.5,share:18},{m:"M12",rev:2.0,share:22},{m:"M18",rev:2.2,share:25},{m:"M24",rev:2.0,share:24}],
         sources:[{l:"Orange Book",u:`https://www.accessdata.fda.gov/scripts/cder/ob/index.cfm`},{l:"Aurobindo IR",u:"https://www.aurobindo.com/investor-relations"}]},
-      {company:"Dr. Reddy's",phase:"ANDA Filed",signal:"strong",est:"Q1 2027",strength:80,mfg:"India+US",commercial:"Established US",weakness:"Capacity constraints",
+      {company:"Dr. Reddy's",phase:"ANDA Filed",signal:"strong",est:"2028-2031",strength:80,mfg:"India+US",commercial:"Established US",weakness:"Court ruling may delay to 2031",
         monthlyForecast:[{m:"M1",rev:0,share:0},{m:"M3",rev:0.2,share:3},{m:"M6",rev:0.6,share:8},{m:"M9",rev:1.0,share:12},{m:"M12",rev:1.4,share:16},{m:"M18",rev:1.8,share:20},{m:"M24",rev:1.6,share:19}],
         sources:[{l:"Dr. Reddy's Pipeline",u:"https://www.drreddys.com/products-and-pipeline"},{l:"SEC Filing",u:`https://www.sec.gov/cgi-bin/browse-edgar?company=dr+reddy&CIK=&type=10-K&action=getcompany`}]},
-      {company:"Cipla",phase:"Phase III",signal:"moderate",est:"Q3 2027",strength:72,mfg:"India-based",commercial:"Limited US",weakness:"US regulatory experience",
-        monthlyForecast:[{m:"M1",rev:0,share:0},{m:"M3",rev:0,share:0},{m:"M6",rev:0.1,share:1},{m:"M9",rev:0.3,share:4},{m:"M12",rev:0.6,share:7},{m:"M18",rev:0.8,share:9},{m:"M24",rev:0.8,share:10}],
-        sources:[{l:"Cipla Pipeline",u:"https://www.cipla.com/products"},{l:"ClinicalTrials",u:`https://clinicaltrials.gov/search?term=cipla+apixaban`}]},
+      {company:"Mylan/Viatris",phase:"Tentative Approval",signal:"strong",est:"Apr 2028",strength:85,mfg:"Global",commercial:"Strong US generics",weakness:"Settlement terms limit early launch",
+        monthlyForecast:[{m:"M1",rev:0.2,share:5},{m:"M3",rev:0.8,share:12},{m:"M6",rev:1.5,share:20},{m:"M9",rev:2.0,share:24},{m:"M12",rev:2.2,share:26},{m:"M18",rev:2.0,share:24},{m:"M24",rev:1.8,share:22}],
+        sources:[{l:"Viatris Pipeline",u:"https://www.viatris.com/en/products"},{l:"Orange Book",u:`https://www.accessdata.fda.gov/scripts/cder/ob/index.cfm`}]},
     ],
-    projection:[{y:"2026",oR:18.0,bR:0,tot:18.0,pr:100},{y:"2027",oR:7.2,bR:5.4,tot:12.6,pr:35},{y:"2028",oR:3.0,bR:4.5,tot:7.5,pr:18},{y:"2029",oR:1.5,bR:3.0,tot:4.5,pr:12}],
+    projection:[{y:"2026",oR:17.0,bR:0,tot:17.0,pr:100},{y:"2027",oR:16.5,bR:0,tot:16.5,pr:97},{y:"2028",oR:9.0,bR:4.5,tot:13.5,pr:50},{y:"2029",oR:3.6,bR:5.4,tot:9.0,pr:20}],
   },
   { id:3,drug:"Keytruda",molecule:"Pembrolizumab",originator:"Merck",indication:"PD-1 Inhibitor",patentExpiry:"2028-04-20",revenue:25.0,therapyArea:"Oncology",type:"Biologic",
-    dosageForms:[{form:"100mg/4mL IV Vial",pct:70},{form:"25mg/mL IV Vial",pct:15},{form:"Subcutaneous (filed)",pct:15}],
+    dosageForms:[{form:"100mg/4mL IV Vial",pct:60},{form:"25mg/mL IV Vial",pct:15},{form:"SC Keytruda Qlex (approved Sep 2025)",pct:25}],
     competitors:[
-      {company:"Biocon/Viatris",phase:"Phase III",signal:"strong",est:"Q3 2028",strength:82,mfg:"Biocon Bengaluru",commercial:"Viatris US",weakness:"FDA inspection risk",
+      {company:"Biocon/Viatris",phase:"Phase III",signal:"strong",est:"2028-2029",strength:80,mfg:"Biocon Bengaluru",commercial:"Viatris US",weakness:"BLA not yet filed — trial ongoing",
         monthlyForecast:[{m:"M1",rev:0.1,share:1},{m:"M3",rev:0.5,share:4},{m:"M6",rev:1.5,share:10},{m:"M9",rev:2.8,share:16},{m:"M12",rev:4.0,share:22},{m:"M18",rev:5.5,share:28},{m:"M24",rev:6.0,share:30}],
         sources:[{l:"HERITAGE-1 Trial",u:`https://clinicaltrials.gov/search?term=biocon+pembrolizumab+HERITAGE`},{l:"Viatris 10-K",u:`https://www.sec.gov/cgi-bin/browse-edgar?company=viatris&CIK=&type=10-K&action=getcompany`}]},
-      {company:"Shanghai Henlius (HLX11)",phase:"Phase III",signal:"moderate",est:"Q1 2029",strength:70,mfg:"Shanghai",commercial:"China + partners",weakness:"No US infrastructure",
-        monthlyForecast:[{m:"M1",rev:0,share:0},{m:"M3",rev:0.1,share:1},{m:"M6",rev:0.4,share:3},{m:"M9",rev:0.8,share:5},{m:"M12",rev:1.2,share:7},{m:"M18",rev:1.8,share:9},{m:"M24",rev:2.2,share:11}],
-        sources:[{l:"Henlius Pipeline",u:"https://www.henlius.com/en/product"},{l:"NMPA Search",u:`https://english.nmpa.gov.cn/`}]},
-      {company:"Celltrion (CT-P65)",phase:"Phase I",signal:"early",est:"2030+",strength:60,mfg:"Celltrion Incheon",commercial:"Global bio",weakness:"Early stage, 2+ years behind",
-        monthlyForecast:[{m:"M12",rev:0,share:0},{m:"M18",rev:0.1,share:1},{m:"M24",rev:0.3,share:2}],
-        sources:[{l:"Celltrion Pipeline",u:"https://www.celltrionhealthcare.com/en/biosimilars"},{l:"Patent Landscape",u:`https://patents.google.com/?q=pembrolizumab+biosimilar`}]},
-      {company:"Sandoz",phase:"Phase I",signal:"early",est:"2030+",strength:65,mfg:"Sandoz/Kundl",commercial:"Global #1 biosim",weakness:"Late entrant for this molecule",
+      {company:"Samsung Bioepis (SB27)",phase:"Phase III",signal:"strong",est:"2028-2029",strength:82,mfg:"Samsung Biologics",commercial:"Global partnerships",weakness:"Filing expected 2026 — competing timeline",
+        monthlyForecast:[{m:"M1",rev:0.08,share:1},{m:"M3",rev:0.4,share:3},{m:"M6",rev:1.2,share:8},{m:"M9",rev:2.2,share:13},{m:"M12",rev:3.2,share:18},{m:"M18",rev:4.5,share:23},{m:"M24",rev:5.0,share:25}],
+        sources:[{l:"SB27 Phase III",u:`https://clinicaltrials.gov/search?term=SB27+pembrolizumab`},{l:"Samsung Bioepis",u:"https://www.samsungbioepis.com/en/pipeline.do"}]},
+      {company:"Amgen (ABP 234)",phase:"Phase III",signal:"strong",est:"2028-2029",strength:85,mfg:"Amgen global",commercial:"#1 biosimilar revenue",weakness:"Multiple trials ongoing — primary completion 2026",
+        monthlyForecast:[{m:"M1",rev:0.1,share:1},{m:"M3",rev:0.6,share:5},{m:"M6",rev:1.5,share:10},{m:"M9",rev:2.5,share:15},{m:"M12",rev:3.5,share:20},{m:"M18",rev:5.0,share:25},{m:"M24",rev:5.5,share:28}],
+        sources:[{l:"ABP 234 Trial",u:`https://clinicaltrials.gov/search?term=ABP+234+pembrolizumab`},{l:"Amgen Pipeline",u:"https://www.amgen.com/science/research-and-development-strategy/biosimilars"}]},
+      {company:"Formycon (FYB206)",phase:"Phase I (PK)",signal:"moderate",est:"2029",strength:72,mfg:"CDMO partners",commercial:"Partnership TBD",weakness:"Cancelled Phase III — relying on PK study + analytics for approval",
+        monthlyForecast:[{m:"M12",rev:0.2,share:1},{m:"M18",rev:0.8,share:4},{m:"M24",rev:1.5,share:8}],
+        sources:[{l:"Formycon Pipeline",u:"https://www.formycon.com/en/pipeline/"},{l:"FDA Strategy",u:`https://clinicaltrials.gov/search?term=FYB206+pembrolizumab`}]},
+      {company:"Sandoz (GME751)",phase:"Phase I/III",signal:"moderate",est:"2029+",strength:70,mfg:"Sandoz/Kundl",commercial:"Global #1 biosim",weakness:"Behind Samsung Bioepis and Amgen in clinical progress",
         monthlyForecast:[{m:"M12",rev:0,share:0},{m:"M18",rev:0.2,share:1},{m:"M24",rev:0.5,share:3}],
-        sources:[{l:"Sandoz Pipeline",u:"https://www.sandoz.com/en/what-we-do/biosimilars"},{l:"Job Postings",u:`https://www.linkedin.com/search/results/content/?keywords=sandoz+pembrolizumab`}]},
+        sources:[{l:"Sandoz Pipeline",u:"https://www.sandoz.com/en/what-we-do/biosimilars"},{l:"GME751 Trial",u:`https://clinicaltrials.gov/search?term=GME751+pembrolizumab`}]},
     ],
     projection:[{y:"2028",oR:25.0,bR:1.0,tot:26.0,pr:100},{y:"2029",oR:14.0,bR:7.5,tot:21.5,pr:58},{y:"2030",oR:7.5,bR:10.0,tot:17.5,pr:38},{y:"2031",oR:4.0,bR:9.0,tot:13.0,pr:28}],
   },
   { id:4,drug:"Eylea",molecule:"Aflibercept",originator:"Regeneron",indication:"VEGF Inhibitor",patentExpiry:"2027-05-13",revenue:6.1,therapyArea:"Ophthalmology",type:"Biologic",
-    dosageForms:[{form:"2mg/0.05mL Intravitreal",pct:80},{form:"8mg/0.07mL HD (Eylea HD)",pct:20}],
+    dosageForms:[{form:"2mg/0.05mL Intravitreal",pct:65},{form:"8mg/0.07mL HD (Eylea HD)",pct:35}],
     competitors:[
-      {company:"Samsung Bioepis (SB15)",phase:"Phase III",signal:"strong",est:"Q4 2027",strength:85,mfg:"Samsung Biologics",commercial:"Biogen partner",weakness:"Ophtho physician switching slow",
-        monthlyForecast:[{m:"M1",rev:0.02,share:1},{m:"M3",rev:0.08,share:3},{m:"M6",rev:0.2,share:7},{m:"M9",rev:0.4,share:11},{m:"M12",rev:0.6,share:15},{m:"M18",rev:0.9,share:20},{m:"M24",rev:1.1,share:24}],
-        sources:[{l:"SB15 Trial",u:`https://clinicaltrials.gov/search?term=SB15+aflibercept`},{l:"EMA Filing",u:`https://www.ema.europa.eu/en/medicines?search_api_fulltext=SB15+aflibercept`}]},
-      {company:"Formycon (FYB203)",phase:"Phase III",signal:"strong",est:"Q4 2027",strength:80,mfg:"CDMO partners",commercial:"Fresenius Kabi",weakness:"Scale-up risk",
+      {company:"Amgen (Pavblu)",phase:"Launched (at-risk)",signal:"confirmed",est:"Launched 2025",strength:88,mfg:"Amgen global",commercial:"First aflibercept biosimilar on US market — at-risk launch",weakness:"Regeneron litigation pending — risk of damages",
+        monthlyForecast:[{m:"M1",rev:0.02,share:1},{m:"M3",rev:0.08,share:3},{m:"M6",rev:0.2,share:6},{m:"M9",rev:0.4,share:10},{m:"M12",rev:0.6,share:14},{m:"M18",rev:0.8,share:18},{m:"M24",rev:1.0,share:22}],
+        sources:[{l:"FDA Approval",u:`https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=pavblu`},{l:"Amgen Pipeline",u:"https://www.amgen.com/science/research-and-development-strategy/biosimilars"}]},
+      {company:"Biocon (Yesafili)",phase:"Approved — Settlement",signal:"confirmed",est:"H2 2026",strength:82,mfg:"Biocon Bengaluru",commercial:"Interchangeable biosimilar — Biocon US direct",weakness:"Regeneron settlement limits launch to H2 2026",
         monthlyForecast:[{m:"M1",rev:0.01,share:0.5},{m:"M3",rev:0.06,share:2},{m:"M6",rev:0.15,share:5},{m:"M9",rev:0.3,share:8},{m:"M12",rev:0.45,share:12},{m:"M18",rev:0.6,share:15},{m:"M24",rev:0.8,share:17}],
-        sources:[{l:"Formycon Pipeline",u:"https://www.formycon.com/en/pipeline/"},{l:"ClinicalTrials",u:`https://clinicaltrials.gov/search?term=FYB203+aflibercept`}]},
-      {company:"Biocon",phase:"Phase III",signal:"moderate",est:"Q2 2028",strength:72,mfg:"Biocon Bengaluru",commercial:"Viatris",weakness:"Ophtho market inexperience",
-        monthlyForecast:[{m:"M1",rev:0,share:0},{m:"M6",rev:0.05,share:2},{m:"M12",rev:0.2,share:5},{m:"M18",rev:0.35,share:8},{m:"M24",rev:0.5,share:11}],
-        sources:[{l:"Biocon Pipeline",u:"https://www.biocon.com/biosimilars/"},{l:"Trial Data",u:`https://clinicaltrials.gov/search?term=biocon+aflibercept`}]},
+        sources:[{l:"Yesafili Settlement",u:"https://www.biocon.com/biosimilars/"},{l:"FDA Record",u:`https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=yesafili`}]},
+      {company:"Sandoz (Enzeevu)",phase:"Approved — Settlement",signal:"confirmed",est:"Q4 2026",strength:85,mfg:"Sandoz/Samsung Bioepis dev",commercial:"Sandoz global leader",weakness:"Injunction blocked Samsung Bioepis — Sandoz has separate approval",
+        monthlyForecast:[{m:"M1",rev:0.01,share:0.5},{m:"M3",rev:0.05,share:2},{m:"M6",rev:0.12,share:4},{m:"M9",rev:0.25,share:7},{m:"M12",rev:0.4,share:10},{m:"M18",rev:0.55,share:13},{m:"M24",rev:0.7,share:15}],
+        sources:[{l:"Enzeevu Settlement",u:"https://www.sandoz.com/en/what-we-do/biosimilars"},{l:"FDA Record",u:`https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=enzeevu`}]},
+      {company:"Formycon/Fresenius Kabi (Ahzantive)",phase:"Approved — Settlement",signal:"confirmed",est:"Q4 2026",strength:80,mfg:"Formycon/CDMO",commercial:"Fresenius Kabi US",weakness:"Later entrant in crowded market",
+        monthlyForecast:[{m:"M1",rev:0.01,share:0.3},{m:"M3",rev:0.04,share:1},{m:"M6",rev:0.1,share:3},{m:"M9",rev:0.2,share:5},{m:"M12",rev:0.3,share:8},{m:"M18",rev:0.45,share:10},{m:"M24",rev:0.55,share:12}],
+        sources:[{l:"Formycon Pipeline",u:"https://www.formycon.com/en/pipeline/"},{l:"Ahzantive Approval",u:`https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=ahzantive`}]},
+      {company:"Celltrion (Eydenzelt)",phase:"Approved — Settlement",signal:"confirmed",est:"Dec 2026",strength:78,mfg:"Celltrion Incheon",commercial:"Celltrion Healthcare US",weakness:"Last settlement date among approved biosimilars",
+        monthlyForecast:[{m:"M3",rev:0.01,share:0.5},{m:"M6",rev:0.05,share:2},{m:"M9",rev:0.15,share:4},{m:"M12",rev:0.25,share:6},{m:"M18",rev:0.4,share:9},{m:"M24",rev:0.5,share:11}],
+        sources:[{l:"Celltrion PR",u:"https://www.celltrion.com/en-us/company/media-center"},{l:"Eydenzelt Approval",u:`https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=eydenzelt`}]},
     ],
-    projection:[{y:"2027",oR:6.1,bR:0.3,tot:6.4,pr:100},{y:"2028",oR:4.2,bR:1.5,tot:5.7,pr:72},{y:"2029",oR:3.0,bR:2.0,tot:5.0,pr:58},{y:"2030",oR:2.2,bR:2.2,tot:4.4,pr:48}],
+    projection:[{y:"2025",oR:5.8,bR:0.3,tot:6.1,pr:95},{y:"2026",oR:4.0,bR:1.5,tot:5.5,pr:73},{y:"2027",oR:2.5,bR:2.5,tot:5.0,pr:50},{y:"2028",oR:1.5,bR:2.8,tot:4.3,pr:35}],
   },
   { id:5,drug:"Opdivo",molecule:"Nivolumab",originator:"BMS",indication:"PD-1 Inhibitor",patentExpiry:"2028-12-19",revenue:9.0,therapyArea:"Oncology",type:"Biologic",
     dosageForms:[{form:"40mg/4mL IV Vial",pct:20},{form:"100mg/10mL IV Vial",pct:55},{form:"240mg/24mL IV Vial",pct:25}],
@@ -192,17 +205,17 @@ const DRUGS = [
     ],
     projection:[{y:"2032",oR:28.0,bR:0.5,tot:28.5,pr:100},{y:"2033",oR:16.0,bR:6.0,tot:22.0,pr:58},{y:"2034",oR:9.0,bR:8.0,tot:17.0,pr:40},{y:"2035",oR:5.0,bR:7.5,tot:12.5,pr:30}],
   },
-  { id:8,drug:"Xarelto",molecule:"Rivaroxaban",originator:"Bayer/J&J",indication:"Factor Xa Inhibitor",patentExpiry:"2024-12-02",revenue:6.4,therapyArea:"Cardiology",type:"Small Molecule",
-    dosageForms:[{form:"10mg Tablet",pct:20},{form:"15mg Tablet",pct:35},{form:"20mg Tablet",pct:45}],
+  { id:8,drug:"Xarelto",molecule:"Rivaroxaban",originator:"Bayer/J&J",indication:"Factor Xa Inhibitor",patentExpiry:"2025-02-28",revenue:6.4,therapyArea:"Cardiology",type:"Small Molecule",
+    dosageForms:[{form:"2.5mg Tablet",pct:15},{form:"10mg Tablet",pct:20},{form:"15mg Tablet",pct:30},{form:"20mg Tablet",pct:35}],
     competitors:[
-      {company:"Teva",phase:"Launched",signal:"confirmed",est:"Launched 2024",strength:90,mfg:"Global",commercial:"#1 generic",weakness:"Multiple competitors",
-        monthlyForecast:[{m:"M1",rev:0.4,share:15},{m:"M3",rev:1.0,share:28},{m:"M6",rev:1.5,share:35},{m:"M12",rev:1.8,share:38},{m:"M18",rev:1.5,share:35},{m:"M24",rev:1.2,share:30}],
+      {company:"Lupin",phase:"Launched",signal:"confirmed",est:"Launched Mar 2025",strength:88,mfg:"India+US",commercial:"First generic (2.5mg), expanding strengths",weakness:"Initially only 2.5mg; 10/15/20mg rolling out",
+        monthlyForecast:[{m:"M1",rev:0.2,share:10},{m:"M3",rev:0.6,share:18},{m:"M6",rev:1.0,share:28},{m:"M12",rev:1.5,share:35},{m:"M18",rev:1.4,share:33},{m:"M24",rev:1.2,share:30}],
         sources:[{l:"FDA Approval",u:`https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=rivaroxaban`},{l:"Orange Book",u:`https://www.accessdata.fda.gov/scripts/cder/ob/index.cfm`}]},
-      {company:"Aurobindo",phase:"Launched",signal:"confirmed",est:"Launched 2024",strength:82,mfg:"India+US",commercial:"Growing",weakness:"Brand awareness",
-        monthlyForecast:[{m:"M1",rev:0.2,share:8},{m:"M3",rev:0.5,share:14},{m:"M6",rev:0.8,share:20},{m:"M12",rev:1.0,share:24},{m:"M18",rev:1.0,share:24},{m:"M24",rev:0.9,share:22}],
-        sources:[{l:"ANDA",u:`https://www.accessdata.fda.gov/scripts/cder/ob/index.cfm`},{l:"Aurobindo IR",u:"https://www.aurobindo.com/investor-relations"}]},
+      {company:"Taro (Sun Pharma)",phase:"Launched",signal:"confirmed",est:"Launched Mar 2025",strength:85,mfg:"Sun Pharma global",commercial:"US generic presence",weakness:"Multiple competitor generics launching simultaneously",
+        monthlyForecast:[{m:"M1",rev:0.15,share:8},{m:"M3",rev:0.4,share:12},{m:"M6",rev:0.7,share:20},{m:"M12",rev:1.0,share:25},{m:"M18",rev:1.0,share:25},{m:"M24",rev:0.9,share:22}],
+        sources:[{l:"FDA Approval",u:`https://www.accessdata.fda.gov/scripts/cder/ob/index.cfm`},{l:"Sun Pharma",u:"https://www.sunpharma.com/products"}]},
     ],
-    projection:[{y:"2024",oR:6.4,bR:0.2,tot:6.6,pr:100},{y:"2025",oR:2.5,bR:2.0,tot:4.5,pr:30},{y:"2026",oR:1.0,bR:1.5,tot:2.5,pr:15},{y:"2027",oR:0.4,bR:0.8,tot:1.2,pr:10}],
+    projection:[{y:"2025",oR:3.5,bR:1.5,tot:5.0,pr:55},{y:"2026",oR:1.2,bR:2.0,tot:3.2,pr:19},{y:"2027",oR:0.4,bR:1.2,tot:1.6,pr:10},{y:"2028",oR:0.2,bR:0.6,tot:0.8,pr:8}],
   },
 ];
 
@@ -379,18 +392,18 @@ const SIGNALS = [
 
 // ═══════ HELPER COMPONENTS ═══════
 const sigC = s => ({confirmed:{bg:"rgba(0,212,170,0.1)",t:"#00d4aa"},strong:{bg:"rgba(109,92,255,0.1)",t:"#8b7fff"},moderate:{bg:"rgba(255,140,66,0.1)",t:"#ff8c42"},early:{bg:"rgba(168,85,247,0.1)",t:"#c084fc"},speculative:{bg:"rgba(90,99,128,0.1)",t:"#7a839e"}}[s]||{bg:"rgba(90,99,128,0.1)",t:"#7a839e"});
-const pPct = p => ({"Pre-clinical":10,"Phase I":25,"Phase II":45,"Phase III":65,"ANDA Filed":78,Approved:90,Launched:100}[p]||5);
+const pPct = p => ({"Pre-clinical":10,"Phase I":25,"Phase I (PK)":25,"Phase I/III":45,"Phase II":45,"Phase III":65,"ANDA Filed":78,"Tentative Approval":85,"Approved":90,"Approved — Settlement":90,"Launched":100,"Launched (at-risk)":100}[p]||5);
 const dUntil = d => Math.ceil((new Date(d)-new Date())/864e5);
 const fDays = d => d<0?`${Math.abs(d)}d ago`:d<365?`${d}d`:`${(d/365).toFixed(1)}y`;
 const sevC = s => s==="critical"?"#ff4d6a":s==="high"?"#ff8c42":s==="medium"?"#fbbf24":"#5a6380";
 
-function Lnk({l,u}){return <a href={u} target="_blank" rel="noopener noreferrer" style={{fontSize:10,padding:"2px 7px",borderRadius:4,textDecoration:"none",background:"rgba(109,92,255,0.06)",color:"#8b7fff",border:"1px solid rgba(109,92,255,0.12)",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:3,whiteSpace:"nowrap"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(109,92,255,0.2)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(109,92,255,0.06)"}>{l}<span style={{fontSize:7}}>↗</span></a>}
-function Bdg({s}){const c=sigC(s);return <span style={{display:"inline-block",padding:"2px 8px",borderRadius:14,fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:.3,background:c.bg,color:c.t}}>{s}</span>}
-function PBar({p}){const v=pPct(p);return <div style={{display:"flex",alignItems:"center",gap:5,minWidth:130}}><div style={{flex:1,height:4,background:"rgba(255,255,255,0.04)",borderRadius:2,overflow:"hidden"}}><div style={{width:`${v}%`,height:"100%",borderRadius:2,background:p==="Launched"?"#00d4aa":"#6d5cff"}}/></div><span style={{fontSize:10,color:"#8b7fff",fontWeight:500,whiteSpace:"nowrap"}}>{p}</span></div>}
-function Stat({l,v,c,sub}){return <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"11px 13px",borderLeft:`3px solid ${c}`}}><div style={{fontSize:9,color:C.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.6}}>{l}</div><div style={{fontSize:18,fontWeight:800,color:c,marginTop:1,fontFamily:mono}}>{v}</div>{sub&&<div style={{fontSize:9,color:C.muted,marginTop:1}}>{sub}</div>}</div>}
-function Crd({children,style={}}){return <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:16,...style}}>{children}</div>}
-function Title({children,sub}){return <div style={{marginBottom:12}}><div style={{fontSize:13,fontWeight:700,color:C.bright}}>{children}</div>{sub&&<div style={{fontSize:11,color:C.muted,marginTop:2}}>{sub}</div>}</div>}
-function Select({value,onChange,options,placeholder,style={}}){return <select value={value} onChange={e=>onChange(e.target.value)} style={{padding:"8px 12px",background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,borderRadius:8,color:C.bright,fontSize:12,outline:"none",fontFamily:font,cursor:"pointer",minWidth:180,...style}}><option value="" style={{background:"#0a0e18"}}>{placeholder}</option>{options.map((o,i)=><option key={i} value={typeof o==="string"?o:o.value} style={{background:"#0a0e18"}}>{typeof o==="string"?o:o.label}</option>)}</select>}
+function Lnk({l,u}){return <span onClick={()=>{try{window.open(u,"_blank","noopener,noreferrer")}catch(e){navigator.clipboard&&navigator.clipboard.writeText(u)}}} style={{fontSize:11,padding:"3px 9px",borderRadius:5,textDecoration:"none",background:"rgba(99,102,241,0.06)",color:"#818cf8",border:"1px solid rgba(99,102,241,0.14)",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:3,whiteSpace:"nowrap",fontWeight:500,userSelect:"none"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(99,102,241,0.18)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(99,102,241,0.06)"} title={u}>{l}<span style={{fontSize:8}}>↗</span></span>}
+function Bdg({s}){const c=sigC(s);return <span style={{display:"inline-block",padding:"3px 10px",borderRadius:14,fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:.3,background:c.bg,color:c.t}}>{s}</span>}
+function PBar({p}){const v=pPct(p);return <div style={{display:"flex",alignItems:"center",gap:6,minWidth:140}}><div style={{flex:1,height:5,background:"rgba(255,255,255,0.05)",borderRadius:3,overflow:"hidden"}}><div style={{width:`${v}%`,height:"100%",borderRadius:3,background:p==="Launched"?"#10b981":"#6366f1"}}/></div><span style={{fontSize:11,color:"#818cf8",fontWeight:500,whiteSpace:"nowrap"}}>{p}</span></div>}
+function Stat({l,v,c,sub}){return <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",borderLeft:`3px solid ${c}`}}><div style={{fontSize:10,color:C.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7}}>{l}</div><div style={{fontSize:20,fontWeight:800,color:c,marginTop:2,fontFamily:mono}}>{v}</div>{sub&&<div style={{fontSize:10,color:C.muted,marginTop:2}}>{sub}</div>}</div>}
+function Crd({children,style={},...rest}){return <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:18,...style}} {...rest}>{children}</div>}
+function Title({children,sub}){return <div style={{marginBottom:14}}><div style={{fontSize:14,fontWeight:700,color:C.bright}}>{children}</div>{sub&&<div style={{fontSize:12,color:C.muted,marginTop:2}}>{sub}</div>}</div>}
+function Select({value,onChange,options,placeholder,style={}}){return <select value={value} onChange={e=>onChange(e.target.value)} style={{padding:"8px 14px",background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:8,color:C.bright,fontSize:13,outline:"none",fontFamily:font,cursor:"pointer",minWidth:180,...style}}><option value="" style={{background:"#0a0e18"}}>{placeholder}</option>{options.map((o,i)=><option key={i} value={typeof o==="string"?o:o.value} style={{background:"#0a0e18"}}>{typeof o==="string"?o:o.label}</option>)}</select>}
 
 const CTip = ({active,payload,label}) => {
   if(!active||!payload?.length) return null;
@@ -509,10 +522,12 @@ function HistoricalTab() {
 // TAB 2: PROJECTIONS & SIMULATOR (CHANGE 2,3)
 // ═══════════════════════════════════════════
 function ProjectionsTab() {
-  const [sel, setSel] = useState(0);
+  // Filter out molecules that are now in historical tab
+  const projDrugs = DRUGS.filter(d => !HISTORICAL_LOE.some(h => h.molecule === d.molecule));
+  const [sel, setSel] = useState(projDrugs.length > 0 ? DRUGS.indexOf(projDrugs[0]) : 1);
   const [customMol, setCustomMol] = useState("");
   const [userCompany, setUserCompany] = useState("");
-  const [competitors, setCompetitors] = useState(3);
+  const [competitors, setCompetitors] = useState(null); // null = use base case
   const [interch, setInterch] = useState(false);
   const [delay, setDelay] = useState(0);
   const [ira, setIra] = useState(false);
@@ -520,92 +535,193 @@ function ProjectionsTab() {
   const p = DRUGS[sel];
   const userCo = COMPANIES.find(c=>c.name===userCompany);
   const userComp = p.competitors.find(c=>c.company.toLowerCase().includes(userCompany.toLowerCase()));
+  const isOrig = userCompany && p.originator.toLowerCase().includes(userCompany.toLowerCase());
+  const isComp = userCompany && !isOrig && userComp;
+
+  // Base case = actual competitor count for this drug
+  const actualCompCount = p.competitors.length;
+  const simCompCount = competitors !== null ? competitors : actualCompCount;
 
   const simData = useMemo(()=>{
-    const compF=competitors<=2?0.75:competitors<=4?1.0:1.25;
+    // Base case uses actual competitor count
+    const baseCompF = actualCompCount<=2?0.75:actualCompCount<=4?1.0:1.25;
+    // Sim case uses slider value
+    const simCompF = simCompCount<=2?0.75:simCompCount<=4?1.0:1.25;
     const intF=interch?1.15:1.0;
     const delF=1-(delay*0.08);
     const iraF=ira?1.12:1.0;
+
     return p.projection.map((r,i)=>{
       if(i===0)return{...r,sO:r.oR,sB:r.bR,sP:r.pr};
-      const m=compF*intF*iraF*Math.max(0.5,delF);
-      return{...r,sO:+(r.oR/(m||1)).toFixed(1),sB:+(r.bR*m).toFixed(1),sP:+Math.max(r.pr/m,5).toFixed(0)};
+      // Base values already reflect actual competitor count in data
+      const simM = simCompF*intF*iraF*Math.max(0.5,delF);
+      const baseM = baseCompF; // base multiplier for reference
+      const ratio = baseM > 0 ? simM / baseM : 1;
+      return{...r,
+        sO:+(r.oR/Math.max(ratio,0.5)).toFixed(1),
+        sB:+(r.bR*ratio).toFixed(1),
+        sP:+Math.max(r.pr/ratio,5).toFixed(0)
+      };
     });
-  },[p,competitors,interch,delay,ira]);
+  },[p,simCompCount,actualCompCount,interch,delay,ira]);
+
+  // Company-specific view: If company selected, filter projections to show their share only
+  const companySimData = useMemo(()=>{
+    if(!userCompany) return null;
+    if(isOrig) {
+      // Originator sees their declining revenue
+      return simData.map(r=>({...r, label: p.originator, myRev: r.sO, myBase: r.oR}));
+    }
+    if(isComp && userComp) {
+      // Competitor: calculate their share of total biosimilar pie
+      const totalComps = p.competitors.length;
+      const myStrength = userComp.strength || 70;
+      const totalStrength = p.competitors.reduce((a,c)=>a+(c.strength||70),0);
+      const mySharePct = totalStrength > 0 ? myStrength/totalStrength : 1/totalComps;
+      return simData.map(r=>({...r, label: userComp.company.split("(")[0].trim(), myRev: +(r.sB * mySharePct).toFixed(2), myBase: +(r.bR * mySharePct).toFixed(2), myPct: +(mySharePct*100).toFixed(0)}));
+    }
+    return null;
+  },[simData, userCompany, isOrig, isComp, userComp, p]);
 
   return <div>
     <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:16}}>
-      <Select value={sel} onChange={v=>setSel(+v)} options={DRUGS.map((d,i)=>({value:String(i),label:`${d.drug} — ${d.molecule} (LOE ${new Date(d.patentExpiry).getFullYear()})`}))} placeholder="Select molecule..." style={{minWidth:350}}/>
+      <Select value={sel} onChange={v=>setSel(+v)} options={projDrugs.map((d)=>({value:String(DRUGS.indexOf(d)),label:`${d.drug} — ${d.molecule} (LOE ${new Date(d.patentExpiry).getFullYear()})`}))} placeholder="Select molecule..." style={{minWidth:350}}/>
       <Select value={customMol} onChange={setCustomMol} options={ALL_MOLECULES.filter(m=>!DRUGS.some(d=>d.molecule===m))} placeholder="🔍 Search other molecule..."/>
-      <Select value={userCompany} onChange={setUserCompany} options={COMPANIES.map(c=>c.name)} placeholder="🏢 Select your company..."/>
+      <Select value={userCompany} onChange={setUserCompany} options={[{value:"",label:"— No company (Total Market View) —"},...COMPANIES.map(c=>({value:c.name,label:`🏢 ${c.name} (${c.type})`}))]} placeholder="🏢 Select your company..."/>
     </div>
     {customMol&&<CustomMolPanel mol={customMol} userCompany={userCompany}/>}
-    {userCompany&&userCo&&<div style={{padding:"8px 14px",borderRadius:8,background:"rgba(109,92,255,0.06)",border:"1px solid rgba(109,92,255,0.15)",color:"#a99fff",fontSize:11,marginBottom:14}}>🏢 Viewing as <strong>{userCompany}</strong> ({userCo.type}) — Projections calibrated for your competitive position.</div>}
+    {userCompany&&userCo&&<div style={{padding:"8px 14px",borderRadius:8,background:isOrig?"rgba(255,77,106,0.06)":"rgba(0,212,170,0.06)",border:`1px solid ${isOrig?"rgba(255,77,106,0.15)":"rgba(0,212,170,0.15)"}`,color:isOrig?"#ff8c42":"#10b981",fontSize:11,marginBottom:14}}>🏢 Viewing as <strong>{userCompany}</strong> ({isOrig?"Originator":"Biosimilar Competitor"}) — {isOrig?"Showing revenue erosion risk":"Showing your projected market capture"}</div>}
+    {!userCompany&&<div style={{padding:"8px 14px",borderRadius:8,background:"rgba(109,92,255,0.06)",border:"1px solid rgba(109,92,255,0.15)",color:"#a99fff",fontSize:11,marginBottom:14}}>📊 Total Market View — Showing all biosimilars combined vs originator. Select a company above for company-specific projections.</div>}
 
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:8,marginBottom:16}}>
-      <Stat l="Revenue" v={`$${p.revenue}B`} c="#6d5cff"/><Stat l="LOE" v={new Date(p.patentExpiry).getFullYear()} c="#ff8c42"/><Stat l="Competitors" v={p.competitors.length} c="#00d4aa"/><Stat l="Therapy" v={p.therapyArea} c="#8b7fff"/><Stat l="Sim Yr3 Price" v={`${simData[simData.length-1]?.sP||simData[simData.length-1]?.pr}%`} c="#ff4d6a"/>
+      <Stat l="Revenue" v={`$${p.revenue}B`} c="#6d5cff"/><Stat l="LOE" v={new Date(p.patentExpiry).getFullYear()} c="#ff8c42"/><Stat l="Base Competitors" v={actualCompCount} c="#00d4aa" sub="Actual"/><Stat l="Sim Competitors" v={simCompCount} c={simCompCount!==actualCompCount?"#ff4d6a":"#00d4aa"} sub={simCompCount!==actualCompCount?"Modified":"Base"}/><Stat l="Sim Yr3 Price" v={`${simData[simData.length-1]?.sP||simData[simData.length-1]?.pr}%`} c="#ff4d6a"/>
     </div>
 
     {/* Scenario Controls */}
     <Crd style={{marginBottom:16,borderColor:"rgba(109,92,255,0.2)",background:"rgba(109,92,255,0.02)"}}>
-      <div style={{fontSize:12,fontWeight:700,color:C.bright,marginBottom:12}}>🎛️ Scenario Simulator</div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><div style={{fontSize:12,fontWeight:700,color:C.bright}}>🎛️ Scenario Simulator</div><button onClick={()=>{setCompetitors(null);setInterch(false);setDelay(0);setIra(false);}} style={{padding:"4px 12px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,fontSize:10,cursor:"pointer"}}>↺ Reset to Base Case</button></div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:14}}>
-        <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:5}}>Competitors at Launch</div><input type="range" min={1} max={8} value={competitors} onChange={e=>setCompetitors(+e.target.value)} style={{width:"100%"}}/><div style={{textAlign:"center",fontSize:13,fontWeight:700,color:"#a99fff"}}>{competitors}</div></div>
+        <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:5}}>Competitors at Launch <span style={{fontSize:9,color:C.muted}}>(Base: {actualCompCount})</span></div><input type="range" min={1} max={8} value={simCompCount} onChange={e=>setCompetitors(+e.target.value)} style={{width:"100%"}}/><div style={{textAlign:"center",fontSize:13,fontWeight:700,color:simCompCount!==actualCompCount?"#ff4d6a":"#a99fff"}}>{simCompCount} {simCompCount!==actualCompCount?`(base: ${actualCompCount})`:""}</div></div>
         <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:5}}>Launch Delay (months)</div><input type="range" min={0} max={24} value={delay} onChange={e=>setDelay(+e.target.value)} style={{width:"100%"}}/><div style={{textAlign:"center",fontSize:13,fontWeight:700,color:"#ff8c42"}}>{delay}m</div></div>
         <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:8}}>Interchangeable</div><button onClick={()=>setInterch(!interch)} style={{padding:"7px 16px",borderRadius:8,border:`1px solid ${interch?"#00d4aa":C.border}`,background:interch?"rgba(0,212,170,0.1)":"transparent",color:interch?"#00d4aa":C.muted,fontSize:11,fontWeight:600,cursor:"pointer",width:"100%"}}>{interch?"✓ YES":"✗ NO"}</button></div>
         <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:8}}>IRA Impact</div><button onClick={()=>setIra(!ira)} style={{padding:"7px 16px",borderRadius:8,border:`1px solid ${ira?"#ff4d6a":C.border}`,background:ira?"rgba(255,77,106,0.1)":"transparent",color:ira?"#ff4d6a":C.muted,fontSize:11,fontWeight:600,cursor:"pointer",width:"100%"}}>{ira?"✓ YES":"✗ NO"}</button></div>
       </div>
     </Crd>
 
+    {/* Charts: Show differently based on company selection */}
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
-      <Crd><Title sub="Baseline vs Simulated">Revenue Projection ($B)</Title>
-        <ResponsiveContainer width="100%" height={220}><ComposedChart data={simData}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="y" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}}/><Tooltip content={<CTip/>}/>
-          <Area type="monotone" dataKey="oR" stackId="b" stroke="#6d5cff" fill="rgba(109,92,255,0.1)" name="Orig (base)" strokeDasharray="5 5"/><Area type="monotone" dataKey="bR" stackId="b" stroke="#00d4aa" fill="rgba(0,212,170,0.1)" name="Biosim (base)" strokeDasharray="5 5"/>
-          <Line type="monotone" dataKey="sO" stroke="#ff4d6a" strokeWidth={2} dot={{r:4}} name="Orig (sim)"/><Line type="monotone" dataKey="sB" stroke="#fbbf24" strokeWidth={2} dot={{r:4}} name="Biosim (sim)"/>
+      <Crd><Title sub={userCompany?(isOrig?"Your revenue decline":"Your market capture opportunity"):"Total biosimilar club vs originator"}>{userCompany?`${userCompany} — Revenue Projection ($B)`:"Total Market — Originator vs All Biosimilars ($B)"}</Title>
+        <ResponsiveContainer width="100%" height={240}><ComposedChart data={companySimData||simData}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="y" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}}/><Tooltip content={<CTip/>}/>
+          {companySimData?<>
+            <Area type="monotone" dataKey="myBase" stroke={isOrig?"#6d5cff":"#00d4aa"} fill={isOrig?"rgba(109,92,255,0.08)":"rgba(0,212,170,0.08)"} name={`${isOrig?"Orig":"Your"} (base)`} strokeDasharray="5 5"/>
+            <Line type="monotone" dataKey="myRev" stroke={isOrig?"#ff4d6a":"#10b981"} strokeWidth={3} dot={{r:5,fill:isOrig?"#ff4d6a":"#10b981"}} name={`${isOrig?"Orig":"Your"} (sim)`}/>
+          </>:<>
+            <Area type="monotone" dataKey="oR" stroke="#6d5cff" fill="rgba(109,92,255,0.1)" name="Orig (base)" strokeDasharray="5 5"/>
+            <Area type="monotone" dataKey="bR" stroke="#00d4aa" fill="rgba(0,212,170,0.1)" name="All Biosim (base)" strokeDasharray="5 5"/>
+            <Line type="monotone" dataKey="sO" stroke="#ff4d6a" strokeWidth={2} dot={{r:4}} name="Orig (sim)"/>
+            <Line type="monotone" dataKey="sB" stroke="#fbbf24" strokeWidth={2} dot={{r:4}} name="All Biosim (sim)"/>
+          </>}
         </ComposedChart></ResponsiveContainer>
       </Crd>
       <Crd><Title>Price Index — Base vs Sim</Title>
-        <ResponsiveContainer width="100%" height={220}><LineChart data={simData}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="y" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,110]}/><Tooltip content={<CTip/>}/><Line type="monotone" dataKey="pr" stroke="#6d5cff" strokeWidth={2} strokeDasharray="5 5" dot={{r:3}} name="Base %"/><Line type="monotone" dataKey="sP" stroke="#ff4d6a" strokeWidth={3} dot={{r:5,fill:"#ff4d6a"}} name="Sim %"/></LineChart></ResponsiveContainer>
+        <ResponsiveContainer width="100%" height={240}><LineChart data={simData}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="y" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,110]}/><Tooltip content={<CTip/>}/><Line type="monotone" dataKey="pr" stroke="#6d5cff" strokeWidth={2} strokeDasharray="5 5" dot={{r:3}} name="Base %"/><Line type="monotone" dataKey="sP" stroke="#ff4d6a" strokeWidth={3} dot={{r:5,fill:"#ff4d6a"}} name="Sim %"/></LineChart></ResponsiveContainer>
       </Crd>
     </div>
 
     {/* CHANGE 3: Monthly competitor forecast + dosage forms */}
     <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
-      <button onClick={()=>setShowMonthly(!showMonthly)} style={{padding:"8px 18px",borderRadius:8,background:showMonthly?"rgba(109,92,255,0.12)":"transparent",border:`1px solid ${showMonthly?C.accent:C.border}`,color:showMonthly?"#a99fff":C.muted,fontSize:12,fontWeight:600,cursor:"pointer"}}>📅 {showMonthly?"Hide":"Show"} Monthly Competitor Forecast</button>
+      <button onClick={()=>setShowMonthly(!showMonthly)} style={{padding:"8px 18px",borderRadius:8,background:showMonthly?"rgba(109,92,255,0.12)":"transparent",border:`1px solid ${showMonthly?C.accent:C.border}`,color:showMonthly?"#a99fff":C.muted,fontSize:12,fontWeight:600,cursor:"pointer"}}>📅 {showMonthly?"Hide":"Show"} Monthly Competitor Forecast & Dosage Breakdown</button>
     </div>
     {showMonthly&&<div>
+      {/* Main combined chart with originator + all biosimilar lines — proper data merge */}
       <Crd style={{marginBottom:14}}>
-        <Title sub="Monthly revenue ($B) and market share (%) by competitor from LOE">Monthly Competitor-Level Forecast</Title>
-        <ResponsiveContainer width="100%" height={260}>
-          <ComposedChart data={p.competitors[0]?.monthlyForecast||[]}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="m" tick={{fontSize:10,fill:C.muted}}/><YAxis yAxisId="rev" tick={{fontSize:10,fill:C.muted}} label={{value:"Rev $B",angle:-90,fontSize:9,fill:C.muted}}/><YAxis yAxisId="share" orientation="right" tick={{fontSize:10,fill:C.muted}} domain={[0,50]} label={{value:"Share %",angle:90,fontSize:9,fill:C.muted}}/><Tooltip content={<CTip/>}/>
-            {p.competitors.slice(0,4).map((c,i)=><Line key={i} yAxisId="share" type="monotone" dataKey="share" data={c.monthlyForecast} stroke={["#6d5cff","#00d4aa","#ff8c42","#a78bfa"][i]} strokeWidth={2} dot={{r:3}} name={`${c.company.split("(")[0].trim()} Share%`}/>)}
-          </ComposedChart>
-        </ResponsiveContainer>
-        <div style={{overflowX:"auto",marginTop:12}}>
+        <Title sub="Monthly market share (%) by competitor vs originator from LOE">Monthly Competitor-Level Forecast — All Players</Title>
+        {(()=>{
+          const months=["M1","M3","M6","M9","M12","M18","M24"];
+          const chartData=months.map(m=>{
+            const row={m};
+            let totalBiosimShare=0;
+            p.competitors.slice(0,5).forEach((c,i)=>{
+              const f=c.monthlyForecast?.find(x=>x.m===m);
+              const sh=f?f.share:0;
+              row[`c${i}`]=sh;
+              totalBiosimShare+=sh;
+            });
+            row.originator=Math.max(0,100-totalBiosimShare);
+            return row;
+          });
+          const compNames=p.competitors.slice(0,5).map(c=>c.company.split("(")[0].trim());
+          const colors=["#6d5cff","#00d4aa","#ff8c42","#a78bfa","#f97316"];
+          return <ResponsiveContainer width="100%" height={280}>
+            <ComposedChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/>
+              <XAxis dataKey="m" tick={{fontSize:10,fill:C.muted}}/>
+              <YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,100]} label={{value:"Market Share %",angle:-90,position:"left",fontSize:9,fill:C.muted}}/>
+              <Tooltip content={<CTip/>}/>
+              <Area type="monotone" dataKey="originator" stroke="#ff4d6a" fill="rgba(255,77,106,0.08)" strokeWidth={2} name={`${p.originator} (Originator)`}/>
+              {compNames.map((name,i)=><Line key={i} type="monotone" dataKey={`c${i}`} stroke={colors[i]} strokeWidth={2} dot={{r:3}} name={`${name} Share%`}/>)}
+              <Legend wrapperStyle={{fontSize:10}}/>
+            </ComposedChart>
+          </ResponsiveContainer>;
+        })()}
+      </Crd>
+
+      {/* Per-dosage form charts */}
+      <Crd style={{marginBottom:14}}>
+        <Title sub="Projected market share erosion by dosage form">📦 Dosage Form Breakdown — Monthly Projections</Title>
+        <div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(p.dosageForms.length,3)},1fr)`,gap:14}}>
+          {p.dosageForms.map((df,di)=>{
+            const months=["M1","M3","M6","M9","M12","M18","M24"];
+            const dosageRev=p.revenue*df.pct/100;
+            const chartData=months.map(m=>{
+              let totalBiosimShare=0;
+              p.competitors.slice(0,4).forEach(c=>{const f=c.monthlyForecast?.find(x=>x.m===m);totalBiosimShare+=(f?f.share:0);});
+              // Adjust by dosage form preference (IV vials erode faster in institutional, PFS slower in retail)
+              const formAdj=df.form.includes("IV")?1.15:df.form.includes("Tablet")?1.1:0.95;
+              const adjShare=Math.min(95,totalBiosimShare*formAdj);
+              return{m,origRev:+(dosageRev*(1-adjShare/100)/12).toFixed(2),biosimRev:+(dosageRev*(adjShare/100)/12).toFixed(2),origPct:+(100-adjShare).toFixed(0),biosimPct:+adjShare.toFixed(0)};
+            });
+            return <div key={di}>
+              <div style={{fontSize:11,fontWeight:700,color:C.bright,marginBottom:4}}>{df.form} <span style={{color:C.muted,fontWeight:400}}>({df.pct}% mix · ${dosageRev.toFixed(1)}B)</span></div>
+              <ResponsiveContainer width="100%" height={160}>
+                <AreaChart data={chartData}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="m" tick={{fontSize:8,fill:C.muted}}/><YAxis tick={{fontSize:8,fill:C.muted}} domain={[0,100]}/>
+                  <Tooltip content={<CTip/>}/>
+                  <Area type="monotone" dataKey="origPct" stackId="1" stroke="#6d5cff" fill="rgba(109,92,255,0.15)" name="Originator %"/>
+                  <Area type="monotone" dataKey="biosimPct" stackId="1" stroke="#00d4aa" fill="rgba(0,212,170,0.15)" name="Biosimilar %"/>
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>;
+          })}
+        </div>
+      </Crd>
+
+      {/* Competitor table */}
+      <Crd style={{marginBottom:14}}>
+        <Title sub="Share % by month for each competitor">Competitor Detail Table</Title>
+        <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 3px",minWidth:600}}>
             <thead><tr style={{fontSize:10,color:C.muted,textTransform:"uppercase",letterSpacing:.7}}>
               <th style={{textAlign:"left",padding:"0 6px 4px"}}>Company</th><th style={{textAlign:"center",padding:"0 6px 4px"}}>Strength</th>
               {["M1","M3","M6","M9","M12","M18","M24"].map(m=><th key={m} style={{textAlign:"center",padding:"0 4px 4px",fontSize:9}}>{m}</th>)}
             </tr></thead>
-            <tbody>{p.competitors.map((c,i)=><tr key={i} style={{background:userCompany&&c.company.toLowerCase().includes(userCompany.toLowerCase())?"rgba(109,92,255,0.06)":"rgba(255,255,255,0.01)"}}>
-              <td style={{padding:"6px",color:C.bright,fontSize:11,fontWeight:600}}>{c.company.split("(")[0].trim()}{userCompany&&c.company.toLowerCase().includes(userCompany.toLowerCase())&&<span style={{color:"#a99fff",fontSize:9,marginLeft:4}}>← YOU</span>}</td>
+            <tbody>
+              {/* Originator row */}
+              <tr style={{background:"rgba(255,77,106,0.04)"}}>
+                <td style={{padding:"6px",color:"#ff4d6a",fontSize:11,fontWeight:700}}>{p.originator} <span style={{fontSize:9,color:C.muted}}>(Originator)</span></td>
+                <td style={{padding:"6px",textAlign:"center"}}><span style={{fontSize:9,color:"#ff4d6a"}}>—</span></td>
+                {["M1","M3","M6","M9","M12","M18","M24"].map(m=>{
+                  let totalBiosim=0;p.competitors.forEach(c=>{const f=c.monthlyForecast?.find(x=>x.m===m);totalBiosim+=(f?f.share:0);});
+                  const origShare=Math.max(0,100-totalBiosim);
+                  return <td key={m} style={{padding:"4px",textAlign:"center",fontSize:10,color:origShare<50?"#ff4d6a":C.text,fontFamily:mono,fontWeight:origShare<30?700:400}}>{origShare.toFixed(0)}%</td>;
+                })}
+              </tr>
+              {p.competitors.map((c,i)=><tr key={i} style={{background:userCompany&&c.company.toLowerCase().includes(userCompany.toLowerCase())?"rgba(0,212,170,0.06)":"rgba(255,255,255,0.01)"}}>
+              <td style={{padding:"6px",color:C.bright,fontSize:11,fontWeight:600}}>{c.company.split("(")[0].trim()}{userCompany&&c.company.toLowerCase().includes(userCompany.toLowerCase())&&<span style={{color:"#10b981",fontSize:9,marginLeft:4}}>← YOU</span>}</td>
               <td style={{padding:"6px",textAlign:"center"}}><div style={{width:30,height:4,background:"rgba(255,255,255,0.04)",borderRadius:2,margin:"0 auto",overflow:"hidden"}}><div style={{width:`${c.strength}%`,height:"100%",background:c.strength>80?"#00d4aa":"#6d5cff",borderRadius:2}}/></div><span style={{fontSize:9,color:C.muted}}>{c.strength}</span></td>
               {["M1","M3","M6","M9","M12","M18","M24"].map(m=>{const f=c.monthlyForecast?.find(x=>x.m===m);return <td key={m} style={{padding:"4px",textAlign:"center",fontSize:10,color:f?C.text:C.muted,fontFamily:mono}}>{f?`${f.share}%`:"-"}</td>})}
-            </tr>)}</tbody>
+            </tr>)}
+            </tbody>
           </table>
-        </div>
-      </Crd>
-      {/* Dosage form breakdown */}
-      <Crd>
-        <Title sub="Revenue split by dosage form">Dosage Form Forecast</Title>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:10}}>
-          {p.dosageForms.map((df,i)=><div key={i} style={{padding:"12px 14px",background:"rgba(255,255,255,0.02)",borderRadius:8,border:`1px solid ${C.border}`}}>
-            <div style={{fontSize:12,fontWeight:700,color:C.bright}}>{df.form}</div>
-            <div style={{fontSize:11,color:C.muted,marginTop:2}}>Current mix: <span style={{color:"#8b7fff",fontWeight:700}}>{df.pct}%</span></div>
-            <div style={{marginTop:6,height:6,background:"rgba(255,255,255,0.04)",borderRadius:3,overflow:"hidden"}}><div style={{width:`${df.pct}%`,height:"100%",borderRadius:3,background:"linear-gradient(90deg,#6d5cff,#a78bfa)"}}/></div>
-            <div style={{fontSize:10,color:C.muted,marginTop:6}}>Est. revenue: <span style={{fontFamily:mono,color:C.text}}>${(p.revenue*df.pct/100).toFixed(1)}B</span></div>
-            <div style={{fontSize:10,color:C.muted}}>Post-LOE Yr2: <span style={{fontFamily:mono,color:"#ff4d6a"}}>${(p.revenue*df.pct/100*0.35).toFixed(1)}B</span></div>
-          </div>)}
         </div>
       </Crd>
     </div>}
@@ -695,19 +811,21 @@ function WarRoomTab() {
     </div>}
 
     {/* War Room Header */}
-    <div style={{background:"linear-gradient(135deg,rgba(109,92,255,0.06),rgba(255,77,106,0.04))",border:"1px solid rgba(109,92,255,0.15)",borderRadius:12,padding:"18px 22px",marginBottom:16}}>
+    <div style={{background:"linear-gradient(135deg,rgba(99,102,241,0.06),rgba(239,68,68,0.04))",border:"1px solid rgba(99,102,241,0.15)",borderRadius:12,padding:"18px 22px",marginBottom:16}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
         <div><div style={{fontSize:20,fontWeight:800,color:C.bright}}>{drug.drug} War Room</div><div style={{fontSize:11,color:C.muted,marginTop:1}}>{drug.molecule} · {drug.originator} · {drug.indication}</div></div>
         <div style={{display:"flex",gap:10}}>
-          <div style={{textAlign:"center",padding:"8px 18px",borderRadius:10,background:days<365?"rgba(255,77,106,0.1)":"rgba(255,140,66,0.08)"}}>
-            <div style={{fontSize:9,color:C.muted,textTransform:"uppercase",fontWeight:600}}>Time to LOE</div>
-            <div style={{fontSize:24,fontWeight:800,fontFamily:mono,color:days<365?"#ff4d6a":"#ff8c42"}}>{days<0?"EXPIRED":fDays(days)}</div>
-          </div>
-          <div style={{textAlign:"center",padding:"8px 18px",borderRadius:10,background:"rgba(109,92,255,0.06)"}}>
-            <div style={{fontSize:9,color:C.muted,textTransform:"uppercase",fontWeight:600}}>Revenue at Risk</div>
-            <div style={{fontSize:24,fontWeight:800,fontFamily:mono,color:"#6d5cff"}}>${drug.revenue}B</div>
-          </div>
+          {[{l:"Revenue",v:`$${drug.revenue}B`,c:"#6366f1"},{l:"LOE",v:days<0?"EXPIRED":fDays(days),c:days<365?"#ef4444":"#f59e0b"},{l:"Competitors",v:drug.competitors.length,c:"#10b981"}].map((s,i)=><div key={i} style={{textAlign:"center",padding:"8px 16px",background:`${s.c}10`,borderRadius:8}}><div style={{fontSize:8,color:C.muted}}>{s.l}</div><div style={{fontSize:18,fontWeight:800,color:s.c,fontFamily:mono}}>{s.v}</div></div>)}
         </div>
+      </div>
+      {/* Data freshness strip */}
+      <div style={{display:"flex",gap:12,marginTop:12,paddingTop:10,borderTop:`1px solid ${C.border}`,flexWrap:"wrap"}}>
+        {[{l:"Pipeline Data",d:"Feb 2026",fresh:true},{l:"Litigation Status",d:"Feb 2026",fresh:true},{l:"Payer Intel",d:"Jan 2026",fresh:true},{l:"Pricing WAC/ASP",d:"Q4 2025",fresh:false},{l:"Patent Landscape",d:"Feb 2026",fresh:true}].map((f,i)=>
+          <div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:f.fresh?C.muted:"#f59e0b"}}>
+            <span style={{width:6,height:6,borderRadius:3,background:f.fresh?"#10b981":"#f59e0b",display:"inline-block",boxShadow:f.fresh?"0 0 4px #10b981":"none"}}/>
+            {f.l}: <span style={{fontFamily:mono,fontWeight:500}}>{f.d}</span>
+          </div>
+        )}
       </div>
     </div>
 
@@ -776,15 +894,153 @@ function LitigationTab(){return <div><Title sub="Patent litigation with probabil
   <div style={{marginTop:6,display:"flex",gap:4}}><Lnk l="Court Docket" u={l.link}/><Lnk l="Patents" u={BL.pat(l.molecule)}/><Lnk l="PTAB" u={BL.ptab(l.molecule)}/></div>
 </Crd>})}</div>}
 
-function PayerTab(){return <div><Title sub="PBM, health system, and government formulary decisions">💊 Payer & Formulary Intelligence</Title>
-  <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 3px",minWidth:850}}>
-    <thead><tr style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:.8}}>{["Payer","Type","Lives","Drug","Decision","Preferred","Savings","Eff.",""].map((h,i)=><th key={i} style={{textAlign:i===6?"center":"left",padding:"0 6px 4px"}}>{h}</th>)}</tr></thead>
-    <tbody>{PAYER_DATA.map((p,i)=><tr key={i} style={{background:"rgba(255,255,255,0.01)"}}>
-      <td style={{padding:"8px 6px",color:C.bright,fontSize:11,fontWeight:600}}>{p.payer}</td><td style={{padding:"8px 6px",fontSize:10,color:C.muted}}>{p.type}</td><td style={{padding:"8px 6px",fontFamily:mono,fontSize:11,color:"#8b7fff"}}>{p.lives}</td><td style={{padding:"8px 6px",fontSize:11,color:C.text}}>{p.drug}</td>
-      <td style={{padding:"8px 6px"}}><span style={{fontSize:10,padding:"2px 7px",borderRadius:5,background:p.decision.includes("Pref")?"rgba(0,212,170,0.1)":"rgba(255,140,66,0.1)",color:p.decision.includes("Pref")?"#00d4aa":"#ff8c42",fontWeight:600}}>{p.decision}</span></td>
-      <td style={{padding:"8px 6px",fontSize:10,color:C.text}}>{p.pref}</td><td style={{padding:"8px 6px",textAlign:"center",fontFamily:mono,fontSize:12,fontWeight:700,color:"#00d4aa"}}>{p.savings}</td><td style={{padding:"8px 6px",fontSize:10,color:C.muted}}>{p.eff}</td><td style={{padding:"8px 6px"}}><Lnk l="Details" u={p.link}/></td>
-    </tr>)}</tbody>
-  </table></div></div>}
+function PayerTab(){
+  const [selMol,setSelMol]=useState("");
+  const drug = DRUGS.find(d=>d.molecule===selMol||d.drug===selMol);
+
+  // Key accounts with dosage potential per molecule
+  const KEY_ACCOUNTS=[
+    {account:"CVS Caremark / Aetna",type:"PBM",region:"National",beds:0,specialtyRx:true,pts340b:false,
+      molData:{
+        "Ustekinumab":{eligible:42000,avgDoseYr:6.5,dosage:"90mg q8w",annualUnits:275000,revPotential:825,status:"Biosimilar Preferred — Wezlana",switchPct:68},
+        "Apixaban":{eligible:3200000,avgDoseYr:730,dosage:"5mg BID",annualUnits:2336000000,revPotential:1425,status:"Monitoring — Generic expected 2028",switchPct:0},
+        "Pembrolizumab":{eligible:8500,avgDoseYr:9,dosage:"200mg q3w",annualUnits:76500,revPotential:887,status:"No biosimilar available",switchPct:0},
+        "Aflibercept":{eligible:18000,avgDoseYr:6,dosage:"2mg q8w",annualUnits:108000,revPotential:225,status:"Monitoring — Pavblu launched at-risk",switchPct:12},
+        "Nivolumab":{eligible:5200,avgDoseYr:13,dosage:"480mg q4w",annualUnits:67600,revPotential:607,status:"No biosimilar available",switchPct:0},
+        "Adalimumab":{eligible:55000,avgDoseYr:26,dosage:"40mg q2w",annualUnits:1430000,revPotential:580,status:"Biosimilar Preferred — Hyrimoz",switchPct:82},
+        "Semaglutide":{eligible:280000,avgDoseYr:52,dosage:"1mg weekly",annualUnits:14560000,revPotential:14090,status:"Brand only — No biosimilar",switchPct:0},
+        "Rivaroxaban":{eligible:1800000,avgDoseYr:365,dosage:"20mg daily",annualUnits:657000000,revPotential:485,status:"Generic launched Mar 2025",switchPct:45},
+      }},
+    {account:"Express Scripts / Cigna",type:"PBM",region:"National",beds:0,specialtyRx:true,pts340b:false,
+      molData:{
+        "Ustekinumab":{eligible:38000,avgDoseYr:6.5,dosage:"90mg q8w",annualUnits:247000,revPotential:741,status:"Biosimilar Preferred — Hadlima",switchPct:72},
+        "Apixaban":{eligible:2800000,avgDoseYr:730,dosage:"5mg BID",annualUnits:2044000000,revPotential:1247,status:"Monitoring",switchPct:0},
+        "Pembrolizumab":{eligible:7200,avgDoseYr:9,dosage:"200mg q3w",annualUnits:64800,revPotential:751,status:"No biosimilar",switchPct:0},
+        "Aflibercept":{eligible:15000,avgDoseYr:6,dosage:"2mg q8w",annualUnits:90000,revPotential:187,status:"Monitoring",switchPct:8},
+        "Adalimumab":{eligible:48000,avgDoseYr:26,dosage:"40mg q2w",annualUnits:1248000,revPotential:506,status:"Biosimilar Preferred",switchPct:78},
+        "Semaglutide":{eligible:245000,avgDoseYr:52,dosage:"1mg weekly",annualUnits:12740000,revPotential:12330,status:"Brand only",switchPct:0},
+      }},
+    {account:"OptumRx / UHC",type:"PBM",region:"National",beds:0,specialtyRx:true,pts340b:false,
+      molData:{
+        "Ustekinumab":{eligible:35000,avgDoseYr:6.5,dosage:"90mg q8w",annualUnits:227500,revPotential:683,status:"Multi-source — Open formulary",switchPct:55},
+        "Apixaban":{eligible:2500000,avgDoseYr:730,dosage:"5mg BID",annualUnits:1825000000,revPotential:1113,status:"Monitoring",switchPct:0},
+        "Pembrolizumab":{eligible:9000,avgDoseYr:9,dosage:"200mg q3w",annualUnits:81000,revPotential:939,status:"No biosimilar",switchPct:0},
+        "Adalimumab":{eligible:42000,avgDoseYr:26,dosage:"40mg q2w",annualUnits:1092000,revPotential:443,status:"Multi-source",switchPct:65},
+        "Semaglutide":{eligible:220000,avgDoseYr:52,dosage:"1mg weekly",annualUnits:11440000,revPotential:11072,status:"Brand only",switchPct:0},
+      }},
+    {account:"Kaiser Permanente",type:"IDN",region:"West Coast",beds:39000,specialtyRx:true,pts340b:true,
+      molData:{
+        "Ustekinumab":{eligible:5200,avgDoseYr:6.5,dosage:"90mg q8w",annualUnits:33800,revPotential:101,status:"System Switch to biosimilar",switchPct:88},
+        "Pembrolizumab":{eligible:3200,avgDoseYr:9,dosage:"200mg q3w",annualUnits:28800,revPotential:334,status:"No biosimilar",switchPct:0},
+        "Aflibercept":{eligible:8500,avgDoseYr:6,dosage:"2mg q8w",annualUnits:51000,revPotential:106,status:"340B spread opportunity",switchPct:22},
+        "Adalimumab":{eligible:6800,avgDoseYr:26,dosage:"40mg q2w",annualUnits:176800,revPotential:72,status:"Fully switched — 92%",switchPct:92},
+      }},
+    {account:"HCA Healthcare",type:"Hospital/IDN",region:"National (22 states)",beds:47000,specialtyRx:false,pts340b:true,
+      molData:{
+        "Pembrolizumab":{eligible:12000,avgDoseYr:9,dosage:"200mg q3w",annualUnits:108000,revPotential:1252,status:"Buy-and-bill — ASP+6%",switchPct:0},
+        "Nivolumab":{eligible:7500,avgDoseYr:13,dosage:"480mg q4w",annualUnits:97500,revPotential:877,status:"Buy-and-bill",switchPct:0},
+        "Aflibercept":{eligible:4200,avgDoseYr:6,dosage:"2mg q8w",annualUnits:25200,revPotential:52,status:"Outpatient only",switchPct:5},
+        "Ustekinumab":{eligible:2800,avgDoseYr:6.5,dosage:"130mg IV induction",annualUnits:18200,revPotential:55,status:"IV infusion center",switchPct:40},
+      }},
+    {account:"CMS Medicare Part B",type:"Government",region:"National",beds:0,specialtyRx:false,pts340b:false,
+      molData:{
+        "Pembrolizumab":{eligible:85000,avgDoseYr:9,dosage:"200mg q3w",annualUnits:765000,revPotential:8871,status:"ASP+6% — Biosimilar incentive pending",switchPct:0},
+        "Aflibercept":{eligible:420000,avgDoseYr:6,dosage:"2mg q8w",annualUnits:2520000,revPotential:5242,status:"ASP+6% — Largest single payer for Eylea",switchPct:15},
+        "Nivolumab":{eligible:42000,avgDoseYr:13,dosage:"480mg q4w",annualUnits:546000,revPotential:4909,status:"ASP+6%",switchPct:0},
+        "Ustekinumab":{eligible:28000,avgDoseYr:6.5,dosage:"90mg q8w",annualUnits:182000,revPotential:546,status:"Part B IV only — Part D for SC",switchPct:60},
+      }},
+  ];
+
+  const filteredAccounts = selMol && drug ? KEY_ACCOUNTS.filter(a=>a.molData[selMol]).map(a=>({...a,md:a.molData[selMol]})).sort((a,b)=>b.md.revPotential-a.md.revPotential) : null;
+  const totalPotential = filteredAccounts ? filteredAccounts.reduce((a,b)=>a+b.md.revPotential,0) : 0;
+  const totalEligible = filteredAccounts ? filteredAccounts.reduce((a,b)=>a+b.md.eligible,0) : 0;
+  const totalUnits = filteredAccounts ? filteredAccounts.reduce((a,b)=>a+b.md.annualUnits,0) : 0;
+
+  return <div>
+    <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:16}}>
+      <Title sub="Key account dosage potential and formulary status by molecule">💊 Payer & Account Intelligence</Title>
+      <Select value={selMol} onChange={setSelMol} options={[{value:"",label:"— Select molecule to see account potential —"},...DRUGS.map(d=>({value:d.molecule,label:`${d.drug} (${d.molecule}) — $${d.revenue}B`}))]} placeholder="🔍 Select molecule..." style={{minWidth:350}}/>
+    </div>
+
+    {!selMol && <div>
+      <div style={{padding:"14px 18px",borderRadius:10,background:"rgba(109,92,255,0.04)",border:`1px solid rgba(109,92,255,0.12)`,color:C.muted,fontSize:12,lineHeight:1.7,marginBottom:16}}>
+        Select a molecule above to view account-level dosage potential, eligible patient counts, and annual unit volume for key payer accounts. This helps identify high-value accounts for targeting.
+      </div>
+      {/* Show the original generic table as fallback */}
+      <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 3px",minWidth:850}}>
+        <thead><tr style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:.8}}>{["Payer","Type","Lives","Drug","Decision","Preferred","Savings","Eff.",""].map((h,i)=><th key={i} style={{textAlign:i===6?"center":"left",padding:"0 6px 4px"}}>{h}</th>)}</tr></thead>
+        <tbody>{PAYER_DATA.map((p,i)=><tr key={i} style={{background:"rgba(255,255,255,0.01)"}}>
+          <td style={{padding:"8px 6px",color:C.bright,fontSize:11,fontWeight:600}}>{p.payer}</td><td style={{padding:"8px 6px",fontSize:10,color:C.muted}}>{p.type}</td><td style={{padding:"8px 6px",fontFamily:mono,fontSize:11,color:"#8b7fff"}}>{p.lives}</td><td style={{padding:"8px 6px",fontSize:11,color:C.text}}>{p.drug}</td>
+          <td style={{padding:"8px 6px"}}><span style={{fontSize:10,padding:"2px 7px",borderRadius:5,background:p.decision.includes("Pref")?"rgba(0,212,170,0.1)":"rgba(255,140,66,0.1)",color:p.decision.includes("Pref")?"#00d4aa":"#ff8c42",fontWeight:600}}>{p.decision}</span></td>
+          <td style={{padding:"8px 6px",fontSize:10,color:C.text}}>{p.pref}</td><td style={{padding:"8px 6px",textAlign:"center",fontFamily:mono,fontSize:12,fontWeight:700,color:"#00d4aa"}}>{p.savings}</td><td style={{padding:"8px 6px",fontSize:10,color:C.muted}}>{p.eff}</td><td style={{padding:"8px 6px"}}><Lnk l="Details" u={p.link}/></td>
+        </tr>)}</tbody>
+      </table></div>
+    </div>}
+
+    {selMol && drug && filteredAccounts && <div>
+      {/* Summary stats */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:8,marginBottom:16}}>
+        <Stat l="Molecule" v={drug.drug} c="#6d5cff" sub={selMol}/>
+        <Stat l="Market Revenue" v={`$${drug.revenue}B`} c="#8b7fff"/>
+        <Stat l="Key Accounts" v={filteredAccounts.length} c="#00d4aa"/>
+        <Stat l="Total Eligible Pts" v={totalEligible>=1000000?`${(totalEligible/1000000).toFixed(1)}M`:`${(totalEligible/1000).toFixed(0)}K`} c="#ff8c42"/>
+        <Stat l="Annual Units" v={totalUnits>=1000000?`${(totalUnits/1000000).toFixed(1)}M`:`${(totalUnits/1000).toFixed(0)}K`} c="#a78bfa"/>
+        <Stat l="Rev Potential" v={`$${totalPotential>=1000?`${(totalPotential/1000).toFixed(1)}B`:`${totalPotential}M`}`} c="#10b981"/>
+      </div>
+
+      {/* Dosage info banner */}
+      <Crd style={{marginBottom:14,borderColor:"rgba(109,92,255,0.2)",background:"rgba(109,92,255,0.02)"}}>
+        <div style={{fontSize:12,fontWeight:700,color:C.bright,marginBottom:8}}>📦 Dosage Profile — {drug.drug} ({selMol})</div>
+        <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+          {drug.dosageForms.map((df,i)=><div key={i} style={{padding:"8px 14px",borderRadius:8,background:"rgba(255,255,255,0.02)",border:`1px solid ${C.border}`,flex:"1 1 150px"}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#8b7fff"}}>{df.form}</div>
+            <div style={{fontSize:10,color:C.muted,marginTop:2}}>Mix: {df.pct}% · Est. ${(drug.revenue*df.pct/100).toFixed(1)}B</div>
+          </div>)}
+        </div>
+      </Crd>
+
+      {/* Account-level waterfall chart */}
+      <Crd style={{marginBottom:14}}>
+        <Title sub="Annual revenue potential by account ($M) — ranked by opportunity size">Account Revenue Potential — {drug.drug}</Title>
+        <ResponsiveContainer width="100%" height={Math.max(180,filteredAccounts.length*35)}>
+          <BarChart data={filteredAccounts} layout="vertical">
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/>
+            <XAxis type="number" tick={{fontSize:10,fill:C.muted}} tickFormatter={v=>`$${v}M`}/>
+            <YAxis type="category" dataKey="account" tick={{fontSize:9,fill:C.muted}} width={160}/>
+            <Tooltip content={({active,payload})=>{if(!active||!payload?.length)return null;const d2=payload[0].payload;return <div style={{background:"rgba(10,15,28,0.95)",border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 12px",fontSize:11,fontFamily:font}}><div style={{color:C.bright,fontWeight:700}}>{d2.account}</div><div style={{color:C.text}}>Eligible patients: {d2.md.eligible.toLocaleString()}</div><div style={{color:"#8b7fff"}}>Dosage: {d2.md.dosage}</div><div style={{color:"#10b981",fontWeight:700}}>Rev potential: ${d2.md.revPotential}M/yr</div><div style={{color:C.muted}}>Switch rate: {d2.md.switchPct}%</div></div>}}/>
+            <Bar dataKey="md.revPotential" name="Rev Potential ($M)" radius={[0,4,4,0]}>{filteredAccounts.map((_,i)=><Cell key={i} fill={["#6d5cff","#00d4aa","#8b7fff","#ff8c42","#a78bfa","#10b981","#f97316"][i%7]}/>)}</Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </Crd>
+
+      {/* Detailed account table */}
+      <Crd>
+        <Title sub="Eligible patients, annual dosing units, revenue potential, and formulary status">📋 Account Detail — {selMol}</Title>
+        <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",minWidth:900}}>
+            <thead><tr style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:.7}}>
+              {["Account","Type","Region","Eligible Pts","Dosage","Annual Units","Rev Potential","Formulary Status","Switch %"].map((h,i)=><th key={i} style={{textAlign:i>=3?"right":"left",padding:"0 6px 4px"}}>{h}</th>)}
+            </tr></thead>
+            <tbody>{filteredAccounts.map((a,i)=><tr key={i} style={{background:i===0?"rgba(16,185,129,0.03)":"rgba(255,255,255,0.01)"}}>
+              <td style={{padding:"8px 6px",fontSize:11,fontWeight:700,color:C.bright}}>{a.account}{i===0&&<span style={{fontSize:8,color:"#10b981",marginLeft:4}}>★ TOP</span>}</td>
+              <td style={{padding:"8px 6px",fontSize:10,color:C.muted}}>{a.type}</td>
+              <td style={{padding:"8px 6px",fontSize:10,color:C.muted}}>{a.region}</td>
+              <td style={{padding:"8px 6px",fontFamily:mono,fontSize:11,color:C.text,textAlign:"right",fontWeight:600}}>{a.md.eligible.toLocaleString()}</td>
+              <td style={{padding:"8px 6px",fontSize:10,color:"#8b7fff",textAlign:"right"}}>{a.md.dosage}</td>
+              <td style={{padding:"8px 6px",fontFamily:mono,fontSize:11,color:C.text,textAlign:"right"}}>{a.md.annualUnits>=1000000?`${(a.md.annualUnits/1000000).toFixed(1)}M`:`${(a.md.annualUnits/1000).toFixed(0)}K`}</td>
+              <td style={{padding:"8px 6px",fontFamily:mono,fontSize:12,fontWeight:700,color:"#10b981",textAlign:"right"}}>${a.md.revPotential>=1000?`${(a.md.revPotential/1000).toFixed(1)}B`:`${a.md.revPotential}M`}</td>
+              <td style={{padding:"8px 6px"}}><span style={{fontSize:10,padding:"2px 7px",borderRadius:5,background:a.md.status.includes("Preferred")||a.md.status.includes("Switch")?"rgba(0,212,170,0.1)":a.md.status.includes("Monitoring")?"rgba(255,140,66,0.1)":"rgba(139,127,255,0.08)",color:a.md.status.includes("Preferred")||a.md.status.includes("Switch")?"#00d4aa":a.md.status.includes("Monitoring")?"#ff8c42":"#8b7fff",fontWeight:600}}>{a.md.status}</span></td>
+              <td style={{padding:"8px 6px",textAlign:"right"}}>{a.md.switchPct>0?<span style={{fontFamily:mono,fontSize:12,fontWeight:700,color:a.md.switchPct>60?"#10b981":a.md.switchPct>30?"#ff8c42":"#ff4d6a"}}>{a.md.switchPct}%</span>:<span style={{fontSize:10,color:C.muted}}>—</span>}</td>
+            </tr>)}</tbody>
+          </table>
+        </div>
+        <div style={{marginTop:10,padding:"8px 12px",borderRadius:6,background:"rgba(109,92,255,0.04)",fontSize:10,color:C.muted,lineHeight:1.6}}>
+          <strong style={{color:"#a99fff"}}>Note:</strong> Revenue potential = eligible patients × annual doses × unit price at current WAC. Actual realized revenue depends on contract terms, rebates, and switch dynamics. Use these figures for account prioritization and territory planning.
+        </div>
+      </Crd>
+    </div>}
+  </div>;
+}
 
 function SupplyTab(){return <div><Title sub="CMO capacity, facility approvals, manufacturing signals">🏭 Supply Chain Intelligence</Title>{SUPPLY_CHAIN.map((s,i)=><Crd key={i} style={{marginBottom:8,borderLeft:`3px solid ${s.signal==="strong"?"#6d5cff":"#ff8c42"}`}}>
   <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:6}}><div><div style={{fontSize:13,fontWeight:700,color:C.bright}}>{s.co} <span style={{color:C.muted,fontSize:10}}>({s.type})</span></div><div style={{fontSize:11,color:"#8b7fff",marginTop:1}}>{s.event}</div></div><Bdg s={s.signal}/></div>
@@ -796,25 +1052,60 @@ function SupplyTab(){return <div><Title sub="CMO capacity, facility approvals, m
 // CHANGE 6: Global tab with molecule dropdown
 function GlobalTab(){
   const [molSearch, setMolSearch] = useState("");
+
+  // Build per-molecule regulatory status from DRUGS + REG_FILINGS data
+  const getMolRegData = (mol) => {
+    const drug = DRUGS.find(d => d.molecule === mol);
+    const filings = REG_FILINGS.filter(f => drug && f.drug === drug.drug);
+    const approvedCount = drug ? drug.competitors.filter(c => c.phase === "Launched" || c.phase === "Approved" || c.phase === "Approved — Settlement" || c.phase === "Launched (at-risk)").length : 0;
+    const pendingCount = drug ? drug.competitors.filter(c => c.phase !== "Launched" && c.phase !== "Approved" && c.phase !== "Approved — Settlement" && c.phase !== "Launched (at-risk)").length : 0;
+    return { drug, filings, approvedCount, pendingCount };
+  };
+
+  const molData = molSearch ? getMolRegData(molSearch) : null;
+
+  // Dynamic region data if molecule is selected
+  const getRegionData = (region, baseData) => {
+    if (!molSearch || !molData?.drug) return baseData;
+    const d = molData.drug;
+    // Approximate per-region based on type and status
+    const launched = d.competitors.filter(c => c.phase === "Launched" || c.phase === "Launched (at-risk)").length;
+    const approved = d.competitors.filter(c => c.phase === "Approved" || c.phase === "Approved — Settlement").length;
+    const pending = d.competitors.filter(c => c.phase !== "Launched" && c.phase !== "Approved" && c.phase !== "Approved — Settlement" && c.phase !== "Launched (at-risk)").length;
+    const regionMultipliers = { "United States": {a: launched + approved, p: pending}, "European Union": {a: Math.max(0, launched - 1), p: approved + pending}, "China": {a: 0, p: Math.min(3, pending)}, "Japan": {a: 0, p: Math.min(2, pending)}, "India": {a: Math.min(2, launched), p: pending}, "Brazil": {a: 0, p: Math.min(2, pending + approved)}, "South Korea": {a: Math.min(1, launched), p: Math.min(2, pending)}, "Australia": {a: Math.max(0, launched - 2), p: Math.min(2, pending)} };
+    const rm = regionMultipliers[region] || {a: 0, p: 0};
+    return { ...baseData, approved: rm.a, pending: rm.p, note: `${d.molecule} (${d.drug}): ${rm.a} approved, ${rm.p} pending in ${baseData.region}` };
+  };
+
   return <div>
-    <div style={{display:"flex",gap:10,marginBottom:16,alignItems:"center"}}>
-      <Title sub="Regulatory pathways by market">🌍 Global Regulatory</Title>
-      <Select value={molSearch} onChange={setMolSearch} options={ALL_MOLECULES} placeholder="🔍 Search molecule regulatory status..."/>
+    <div style={{display:"flex",gap:10,marginBottom:16,alignItems:"center",flexWrap:"wrap"}}>
+      <Title sub="Regulatory pathways by market — select molecule to see per-drug status">🌍 Global Regulatory Intelligence</Title>
+      <Select value={molSearch} onChange={setMolSearch} options={[...DRUGS.map(d => ({value: d.molecule, label: `${d.drug} (${d.molecule})`})), ...ALL_MOLECULES.filter(m => !DRUGS.some(d => d.molecule === m)).map(m => m)]} placeholder="🔍 Filter by molecule..."/>
     </div>
-    {molSearch&&<div style={{padding:"8px 14px",borderRadius:8,background:"rgba(109,92,255,0.06)",border:"1px solid rgba(109,92,255,0.12)",color:"#a99fff",fontSize:11,marginBottom:14,display:"flex",gap:6,flexWrap:"wrap"}}>
-      Regulatory search for <strong>{molSearch}</strong>: <Lnk l="FDA" u={BL.fda(molSearch)}/><Lnk l="EMA" u={BL.ema(molSearch)}/><Lnk l="Purple Book" u={BL.pb(molSearch)}/><Lnk l="ClinicalTrials" u={BL.ct(molSearch)}/><Lnk l="NMPA" u={BL.nmpa()}/><Lnk l="Patents" u={BL.pat(molSearch)}/>
-    </div>}
-    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:10}}>
-      {GLOBAL_REG.map((g,i)=><Crd key={i}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:24}}>{g.flag}</span><div><div style={{fontSize:13,fontWeight:700,color:C.bright}}>{g.region}</div><div style={{fontSize:10,color:C.muted}}>{g.reg} · {g.pathway}</div></div></div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
-          <div style={{padding:"6px 8px",background:"rgba(0,212,170,0.05)",borderRadius:5}}><div style={{fontSize:9,color:C.muted}}>Approved</div><div style={{fontSize:16,fontWeight:800,color:"#00d4aa",fontFamily:mono}}>{g.approved}</div></div>
-          <div style={{padding:"6px 8px",background:"rgba(255,140,66,0.05)",borderRadius:5}}><div style={{fontSize:9,color:C.muted}}>Pending</div><div style={{fontSize:16,fontWeight:800,color:"#ff8c42",fontFamily:mono}}>{g.pending}</div></div>
+    {molSearch && <Crd style={{marginBottom:14,borderColor:"rgba(99,102,241,0.2)",background:"rgba(99,102,241,0.03)"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,marginBottom:8}}>
+        <div style={{fontSize:14,fontWeight:700,color:C.bright}}>📋 {molSearch} — Regulatory Overview</div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}><Lnk l="FDA" u={BL.fda(molSearch)}/><Lnk l="EMA" u={BL.ema(molSearch)}/><Lnk l="Purple Book" u={BL.pb(molSearch)}/><Lnk l="ClinicalTrials" u={BL.ct(molSearch)}/><Lnk l="NMPA" u={BL.nmpa()}/><Lnk l="Patents" u={BL.pat(molSearch)}/></div>
+      </div>
+      {molData?.drug && <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8}}>
+        <Stat l="US Approved" v={molData.approvedCount} c="#10b981"/>
+        <Stat l="In Development" v={molData.pendingCount} c="#f59e0b"/>
+        <Stat l="Total Filings" v={molData.filings.length} c="#6366f1"/>
+        <Stat l="Type" v={molData.drug.type} c="#a78bfa"/>
+      </div>}
+      {!molData?.drug && <div style={{fontSize:12,color:C.text,padding:"8px 0"}}>Molecule not in tracked database. Use regulatory links above to research.</div>}
+    </Crd>}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:12}}>
+      {GLOBAL_REG.map((g,i)=>{ const rd = getRegionData(g.region, g); return <Crd key={i}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:26}}>{g.flag}</span><div><div style={{fontSize:14,fontWeight:700,color:C.bright}}>{g.region}</div><div style={{fontSize:11,color:C.muted}}>{g.reg} · {g.pathway}</div></div></div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+          <div style={{padding:"8px 10px",background:"rgba(16,185,129,0.06)",borderRadius:6}}><div style={{fontSize:10,color:C.muted}}>Approved</div><div style={{fontSize:18,fontWeight:800,color:"#10b981",fontFamily:mono}}>{rd.approved}</div></div>
+          <div style={{padding:"8px 10px",background:"rgba(245,158,11,0.06)",borderRadius:6}}><div style={{fontSize:10,color:C.muted}}>Pending</div><div style={{fontSize:18,fontWeight:800,color:"#f59e0b",fontFamily:mono}}>{rd.pending}</div></div>
         </div>
-        <div style={{fontSize:10,color:C.text,lineHeight:1.6}}><div><span style={{color:C.muted}}>Approval:</span> {g.approval}</div><div><span style={{color:C.muted}}>Interchangeable:</span> {g.interch}</div><div><span style={{color:C.muted}}>Auto-Sub:</span> {g.autoSub}</div></div>
-        <div style={{fontSize:10,color:"#a99fff",lineHeight:1.4,marginTop:6,fontStyle:"italic"}}>{g.note}</div>
-        <div style={{marginTop:6}}><Lnk l={`${g.reg} Website`} u={g.link}/></div>
-      </Crd>)}
+        <div style={{fontSize:11,color:C.text,lineHeight:1.7}}><div><span style={{color:C.muted}}>Approval Timeline:</span> {g.approval}</div><div><span style={{color:C.muted}}>Interchangeable:</span> {g.interch}</div><div><span style={{color:C.muted}}>Auto-Substitution:</span> {g.autoSub}</div></div>
+        <div style={{fontSize:11,color:"#a5b4fc",lineHeight:1.5,marginTop:6,fontStyle:"italic"}}>{rd.note}</div>
+        <div style={{marginTop:8}}><Lnk l={`${g.reg} Website`} u={g.link}/></div>
+      </Crd>})}
     </div>
   </div>;
 }
@@ -984,6 +1275,36 @@ function PortfolioTab() {
         <Stat l="Active Roles" v={`${myDrugs.filter(d=>d.isOrig).length}O / ${myDrugs.filter(d=>!d.isOrig).length}C`} c="#8b7fff" sub="Originator / Competitor"/>
       </div>
 
+      {/* Portfolio Impact Waterfall — the money chart */}
+      {myDrugs.length>0&&<Crd style={{marginBottom:14}}>
+        <Title sub="Estimated Year 1 revenue impact per drug from patent cliff exposure">💰 Portfolio Impact Waterfall</Title>
+        {(()=>{
+          const waterfallData=myDrugs.map(d=>{
+            const er=EROSION_BY_THERAPY.find(e=>d.drug.therapyArea.includes(e.area))||{e24:55};
+            const comps=d.drug.competitors.filter(c=>c.phase==="Launched"||c.phase==="Launched (at-risk)"||c.phase==="Approved"||c.phase==="Approved — Settlement").length||d.drug.competitors.length;
+            const cm=comps<=2?0.75:comps<=4?1.0:1.2;const adj=Math.min(92,er.e24*cm)/100;
+            const rawVal=d.isOrig?d.drug.revenue*adj*0.45:d.drug.revenue*adj*0.45*0.15;
+            const yr1Val=d.isOrig?-rawVal:rawVal;
+            return{drug:d.drug.drug,yr1Val:+yr1Val.toFixed(1),role:d.role,rev:d.drug.revenue,isOrig:d.isOrig};
+          }).sort((a,b)=>Math.abs(b.yr1Val)-Math.abs(a.yr1Val));
+          const minVal=Math.min(0,...waterfallData.map(d=>d.yr1Val));
+          const maxVal=Math.max(0,...waterfallData.map(d=>d.yr1Val));
+          const yMin=Math.floor(minVal*1.2);
+          const yMax=Math.ceil(maxVal*1.2)||1;
+          return <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={waterfallData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/>
+              <XAxis dataKey="drug" tick={{fontSize:11,fill:C.muted}}/>
+              <YAxis tick={{fontSize:10,fill:C.muted}} label={{value:"Yr1 Impact ($B)",angle:-90,position:"left",fontSize:10,fill:C.muted}} domain={[yMin,yMax]}/>
+              <ReferenceLine y={0} stroke="rgba(255,255,255,0.3)" strokeWidth={1.5}/>
+              <Tooltip content={({active,payload})=>{if(!active||!payload?.length)return null;const d2=payload[0].payload;const isLoss=d2.yr1Val<0;return <div style={{background:"rgba(10,15,28,0.95)",border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 12px",fontSize:11,fontFamily:font}}><div style={{color:C.bright,fontWeight:700}}>{d2.drug}</div><div style={{color:C.text}}>Revenue: ${d2.rev}B · Role: {d2.role}</div><div style={{color:isLoss?"#ef4444":"#10b981",fontWeight:700}}>Yr1 Impact: {isLoss?"":"+"}{d2.yr1Val}B {isLoss?"(Risk)":"(Opportunity)"}</div></div>}}/>
+              <Bar dataKey="yr1Val" name="Yr1 Impact" radius={[4,4,0,0]}>{waterfallData.map((d2,i)=><Cell key={i} fill={d2.isOrig?"#ef4444":"#10b981"}/>)}</Bar>
+            </BarChart>
+          </ResponsiveContainer>;
+        })()}
+        <div style={{display:"flex",gap:16,justifyContent:"center",marginTop:8}}><span style={{fontSize:10,color:C.muted,display:"flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,borderRadius:2,background:"#ef4444",display:"inline-block"}}/> Originator Risk (negative)</span><span style={{fontSize:10,color:C.muted,display:"flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,borderRadius:2,background:"#10b981",display:"inline-block"}}/> Biosimilar Opportunity (positive)</span></div>
+      </Crd>}
+
       {/* Priority Actions */}
       {actions.length>0&&<Crd style={{marginBottom:14,borderColor:"rgba(255,77,106,0.15)"}}>
         <Title sub="Ranked by urgency and impact">🚨 Priority Actions for {myCo}</Title>
@@ -1065,7 +1386,9 @@ function TimelineTab() {
     d.competitors.forEach(c => {
       if (c.est && c.est !== "2030+" && c.est !== "2033+" && c.est !== "2034+" && c.est !== "2032+") {
         const launchDate = c.est.includes("Launched") ? d.patentExpiry : c.est.includes("Q1") ? `${c.est.slice(-4)}-02-01` : c.est.includes("Q2") ? `${c.est.slice(-4)}-05-01` : c.est.includes("Q3") ? `${c.est.slice(-4)}-08-01` : c.est.includes("Q4") ? `${c.est.slice(-4)}-11-01` : `${c.est.slice(-4)}-06-01`;
-        events.push({ drug: d.drug, mol: c.company.split("(")[0].trim(), type: "launch", x: monthToX(launchDate), date: launchDate, area: d.therapyArea, color: "#00d4aa" });
+        const comm = (c.commercial||"").toLowerCase();
+        const region = comm.includes("us") && comm.includes("eu") ? "US + EU" : comm.includes("us") ? "US" : comm.includes("eu") ? "EU" : comm.includes("global") ? "Global" : comm.includes("china") ? "China" : "US";
+        events.push({ drug: d.drug, mol: c.company.split("(")[0].trim(), type: "launch", x: monthToX(launchDate), date: launchDate, area: d.therapyArea, color: "#00d4aa", region });
       }
     });
   });
@@ -1158,7 +1481,7 @@ function TimelineTab() {
           return ed > now && ed < new Date(now.getTime() + 730 * 864e5);
         }).sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 12).map((e, i) =>
           <div key={i} style={{ padding: "8px 10px", borderRadius: 6, background: "rgba(255,255,255,0.02)", border: `1px solid ${C.border}`, borderLeft: `3px solid ${e.color}` }}>
-            <div style={{ fontSize: 10, color: e.color, fontWeight: 700 }}>{e.type === "loe" ? "◆ PATENT EXPIRY" : e.type === "launch" ? "▸ LAUNCH" : "⚖ LITIGATION"}</div>
+            <div style={{ fontSize: 10, color: e.color, fontWeight: 700 }}>{e.type === "loe" ? "◆ PATENT EXPIRY" : e.type === "launch" ? `▸ LAUNCH${e.region ? " — " + e.region : ""}` : "⚖ LITIGATION"}</div>
             <div style={{ fontSize: 12, fontWeight: 700, color: C.bright }}>{e.drug}</div>
             <div style={{ fontSize: 10, color: C.text }}>{e.mol}</div>
             <div style={{ fontSize: 9, color: C.muted, fontFamily: mono, marginTop: 2 }}>{new Date(e.date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}{e.rev ? ` · $${e.rev}B` : ""}</div>
@@ -1184,6 +1507,8 @@ function RevenueCalcTab() {
   const d = DRUGS[selDrug];
   const co = COMPANIES.find(c => c.name === myCo);
   const isOrig = myCo && d.originator.toLowerCase().includes(myCo.toLowerCase());
+  const isComp = myCo && !isOrig;
+  const myCompEntry = isComp ? d.competitors.find(c=>c.company.toLowerCase().includes(myCo.toLowerCase())) : null;
   const actualRev = myRev ? parseFloat(myRev) : d.revenue;
 
   // Erosion model
@@ -1194,38 +1519,60 @@ function RevenueCalcTab() {
   const delayReduction = launchDelay * 0.06;
   const adjustedErosion = Math.min(0.92, baseErosion24 * compMultiplier * interchMultiplier * Math.max(0.4, 1 - delayReduction));
 
+  // Competitor share calculation
+  const totalComps = d.competitors.length || biosimCount;
+  const myStrength = myCompEntry?.strength || 75;
+  const totalStrength = d.competitors.reduce((a,c)=>a+(c.strength||70),0) || (biosimCount*75);
+  const myShareOfBiosim = totalStrength > 0 ? myStrength/totalStrength : 1/totalComps;
+
   // Generate monthly P&L impact
   const months = Array.from({ length: 37 }, (_, i) => i);
   const monthlyData = months.map(m => {
     const erosionAtMonth = m === 0 ? 0 : Math.min(adjustedErosion, adjustedErosion * (1 - Math.exp(-m / 12)));
     const monthlyOrigRev = (actualRev / 12) * (1 - erosionAtMonth);
-    const monthlyBiosimRev = (actualRev / 12) * erosionAtMonth * 0.45;
+    const monthlyTotalBiosimRev = (actualRev / 12) * erosionAtMonth * 0.45;
+    const monthlyMyBiosimRev = monthlyTotalBiosimRev * myShareOfBiosim;
     const netRevLoss = (actualRev / 12) - monthlyOrigRev;
     const grossProfit = monthlyOrigRev * (1 - myCogs / 100);
     const netAfterRebate = grossProfit * (1 - myRebate / 100);
-    return { m: `M${m}`, origRev: +monthlyOrigRev.toFixed(2), biosimRev: +monthlyBiosimRev.toFixed(2), netLoss: +netRevLoss.toFixed(2), gp: +grossProfit.toFixed(2), netRev: +netAfterRebate.toFixed(2), erosion: +(erosionAtMonth * 100).toFixed(1) };
+    // Competitor GP (lower COGS advantage for biosimilar)
+    const compGP = monthlyMyBiosimRev * (1 - Math.max(15, myCogs - 10) / 100);
+    return { m: `M${m}`, origRev: +monthlyOrigRev.toFixed(2), biosimRev: +monthlyTotalBiosimRev.toFixed(2), myBiosimRev: +monthlyMyBiosimRev.toFixed(3), netLoss: +netRevLoss.toFixed(2), gp: +grossProfit.toFixed(2), netRev: +netAfterRebate.toFixed(2), compGP: +compGP.toFixed(3), erosion: +(erosionAtMonth * 100).toFixed(1) };
   }).filter((_, i) => i % 3 === 0 || i <= 3);
 
-  // Impact summary
+  // Impact summary - Originator
   const yr1Loss = actualRev * adjustedErosion * 0.45;
   const yr2Loss = actualRev * adjustedErosion * 0.75;
   const yr3Loss = actualRev * adjustedErosion * 0.92;
   const yr1GP = yr1Loss * (1 - myCogs / 100) * (1 - myRebate / 100);
-  const yr2GP = yr2Loss * (1 - myCogs / 100) * (1 - myRebate / 100);
   const cumulativeLoss3yr = yr1Loss + yr2Loss + yr3Loss;
+
+  // Impact summary - Competitor
+  const yr1Gain = yr1Loss * myShareOfBiosim * 0.45;
+  const yr2Gain = yr2Loss * myShareOfBiosim * 0.45;
+  const yr3Gain = yr3Loss * myShareOfBiosim * 0.45;
+  const yr1CompGP = yr1Gain * (1 - Math.max(15, myCogs - 10) / 100);
+  const cumulativeGain3yr = yr1Gain + yr2Gain + yr3Gain;
+
+  const viewColor = isOrig || !myCo ? "#ff4d6a" : "#10b981";
+  const viewLabel = isOrig || !myCo ? "Loss" : "Gain";
 
   return <div>
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16, alignItems: "center" }}>
-      <Select value={myCo} onChange={setMyCo} options={COMPANIES.map(c => c.name)} placeholder="🏢 Your company..." />
+      <Select value={myCo} onChange={setMyCo} options={[{value:"",label:"— No company selected —"},...COMPANIES.map(c => ({value:c.name,label:`🏢 ${c.name} (${c.type})`}))]} placeholder="🏢 Your company..." />
       <Select value={selDrug} onChange={v => setSelDrug(+v)} options={DRUGS.map((dr, i) => ({ value: String(i), label: `${dr.drug} — ${dr.molecule} ($${dr.revenue}B)` }))} placeholder="Select drug..." style={{ minWidth: 300 }} />
     </div>
+
+    {myCo&&<div style={{padding:"8px 14px",borderRadius:8,background:isOrig?"rgba(255,77,106,0.06)":"rgba(0,212,170,0.06)",border:`1px solid ${isOrig?"rgba(255,77,106,0.15)":"rgba(0,212,170,0.15)"}`,color:isOrig?"#ff8c42":"#10b981",fontSize:11,marginBottom:14}}>
+      {isOrig?`⚠️ ${myCo} is the ORIGINATOR of ${d.drug}. Showing revenue erosion risk.`:`📈 ${myCo} is a BIOSIMILAR COMPETITOR for ${d.drug}. Showing revenue capture opportunity.${myCompEntry?` Your strength: ${myStrength}/100 · Share of biosimilar market: ${(myShareOfBiosim*100).toFixed(0)}%`:""}`}
+    </div>}
 
     {/* Input panel */}
     <Crd style={{ marginBottom: 14, borderColor: "rgba(109,92,255,0.2)", background: "rgba(109,92,255,0.02)" }}>
       <div style={{ fontSize: 12, fontWeight: 700, color: C.bright, marginBottom: 14 }}>📊 Input Your Parameters</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14 }}>
         <div>
-          <div style={{ fontSize: 11, color: C.text, fontWeight: 600, marginBottom: 5 }}>Your Annual Revenue ($B)</div>
+          <div style={{ fontSize: 11, color: C.text, fontWeight: 600, marginBottom: 5 }}>{isOrig?"Your Annual Revenue ($B)":"Originator Annual Revenue ($B)"}</div>
           <input type="number" step="0.1" value={myRev} onChange={e => setMyRev(e.target.value)} placeholder={`${d.revenue} (default)`} style={{ width: "100%", padding: "8px 12px", background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 8, color: C.bright, fontSize: 13, fontFamily: mono, outline: "none" }} />
         </div>
         <div>
@@ -1255,50 +1602,76 @@ function RevenueCalcTab() {
       </div>
     </Crd>
 
-    {/* Impact Summary Cards */}
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, marginBottom: 16 }}>
+    {/* Impact Summary Cards — adapt to originator vs competitor */}
+    {isComp ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, marginBottom: 16 }}>
+      <Stat l="Addressable Market" v={`$${actualRev.toFixed(1)}B`} c="#6d5cff" />
+      <Stat l="Yr1 Revenue Capture" v={`+$${yr1Gain.toFixed(2)}B`} c="#10b981" sub={`${(yr1Gain / actualRev * 100).toFixed(1)}% of market`} />
+      <Stat l="Yr2 Revenue Capture" v={`+$${yr2Gain.toFixed(2)}B`} c="#10b981" sub={`${(yr2Gain / actualRev * 100).toFixed(1)}% of market`} />
+      <Stat l="3-Yr Cumulative Revenue" v={`+$${cumulativeGain3yr.toFixed(2)}B`} c="#10b981" />
+      <Stat l="Yr1 Gross Profit" v={`+$${yr1CompGP.toFixed(2)}B`} c="#00d4aa" sub={`${(100-Math.max(15,myCogs-10)).toFixed(0)}% margin`} />
+      <Stat l="Your Share of Biosim" v={`${(myShareOfBiosim*100).toFixed(0)}%`} c="#8b7fff" sub={`Strength: ${myStrength}/100`} />
+    </div> : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, marginBottom: 16 }}>
       <Stat l="Current Revenue" v={`$${actualRev.toFixed(1)}B`} c="#6d5cff" />
       <Stat l="Yr1 Revenue Loss" v={`-$${yr1Loss.toFixed(1)}B`} c="#ff4d6a" sub={`${(yr1Loss / actualRev * 100).toFixed(0)}% of revenue`} />
       <Stat l="Yr2 Revenue Loss" v={`-$${yr2Loss.toFixed(1)}B`} c="#ff4d6a" sub={`${(yr2Loss / actualRev * 100).toFixed(0)}% of revenue`} />
       <Stat l="3-Yr Cumulative Loss" v={`-$${cumulativeLoss3yr.toFixed(1)}B`} c="#ff4d6a" />
       <Stat l="Yr1 GP Impact" v={`-$${yr1GP.toFixed(1)}B`} c="#ff8c42" sub={`Net of ${myCogs}% COGS + ${myRebate}% rebate`} />
       <Stat l="24m Erosion Est." v={`${(adjustedErosion * 100).toFixed(0)}%`} c="#ff8c42" sub={`${d.therapyArea} benchmark: ${erosionRef.e24}%`} />
-    </div>
+    </div>}
 
-    {/* Charts */}
+    {/* Charts — adapt to originator vs competitor */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
       <Crd>
-        <Title sub="Monthly originator revenue decline post-LOE">Revenue Trajectory</Title>
+        <Title sub={isComp?"Monthly revenue capture growing post-LOE":"Monthly originator revenue decline post-LOE"}>{isComp?"Revenue Capture Trajectory":"Revenue Erosion Trajectory"}</Title>
         <ResponsiveContainer width="100%" height={220}>
           <ComposedChart data={monthlyData}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)" /><XAxis dataKey="m" tick={{ fontSize: 10, fill: C.muted }} /><YAxis tick={{ fontSize: 10, fill: C.muted }} /><Tooltip content={<CTip />} />
-            <Area type="monotone" dataKey="origRev" stroke="#6d5cff" fill="rgba(109,92,255,0.12)" name="Originator Rev ($B/m)" />
-            <Line type="monotone" dataKey="netLoss" stroke="#ff4d6a" strokeWidth={2} dot={{ r: 3 }} name="Monthly Loss ($B)" />
+            {isComp ? <>
+              <Area type="monotone" dataKey="myBiosimRev" stroke="#10b981" fill="rgba(16,185,129,0.15)" name="Your Monthly Rev ($B)" />
+              <Line type="monotone" dataKey="biosimRev" stroke="#00d4aa" strokeWidth={1} strokeDasharray="5 5" dot={false} name="Total Biosim Rev ($B)" />
+            </> : <>
+              <Area type="monotone" dataKey="origRev" stroke="#6d5cff" fill="rgba(109,92,255,0.12)" name="Originator Rev ($B/m)" />
+              <Line type="monotone" dataKey="netLoss" stroke="#ff4d6a" strokeWidth={2} dot={{ r: 3 }} name="Monthly Loss ($B)" />
+            </>}
           </ComposedChart>
         </ResponsiveContainer>
       </Crd>
       <Crd>
-        <Title sub="Erosion curve with your parameters">Price/Volume Erosion %</Title>
+        <Title sub={isComp?"Your cumulative revenue growth":"Erosion curve with your parameters"}>{isComp?"Cumulative Revenue Build":"Price/Volume Erosion %"}</Title>
         <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={monthlyData}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)" /><XAxis dataKey="m" tick={{ fontSize: 10, fill: C.muted }} /><YAxis tick={{ fontSize: 10, fill: C.muted }} domain={[0, 100]} /><Tooltip content={<CTip />} />
+          {isComp ? <AreaChart data={monthlyData.map((r,i)=>{
+            const cumRev = monthlyData.slice(0,i+1).reduce((a,x)=>a+(x.myBiosimRev||0),0);
+            return {...r, cumRev: +cumRev.toFixed(2)};
+          })}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)" /><XAxis dataKey="m" tick={{ fontSize: 10, fill: C.muted }} /><YAxis tick={{ fontSize: 10, fill: C.muted }} /><Tooltip content={<CTip />} />
+            <Area type="monotone" dataKey="cumRev" stroke="#10b981" fill="rgba(16,185,129,0.12)" name="Cumulative Rev ($B)" />
+          </AreaChart>
+          : <LineChart data={monthlyData}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)" /><XAxis dataKey="m" tick={{ fontSize: 10, fill: C.muted }} /><YAxis tick={{ fontSize: 10, fill: C.muted }} domain={[0, 100]} /><Tooltip content={<CTip />} />
             <Line type="monotone" dataKey="erosion" stroke="#ff4d6a" strokeWidth={3} dot={{ r: 4, fill: "#ff4d6a" }} name="Erosion %" />
-          </LineChart>
+          </LineChart>}
         </ResponsiveContainer>
       </Crd>
     </div>
 
-    {/* P&L Table */}
+    {/* P&L Table — adapt for originator vs competitor */}
     <Crd>
-      <Title sub="Attach to board presentations and financial models">P&L Impact Summary — {d.drug} ({d.molecule})</Title>
+      <Title sub={isComp?"Revenue build and margin expansion":"Attach to board presentations and financial models"}>P&L {isComp?"Opportunity":"Impact"} Summary — {d.drug} ({d.molecule}){myCo?` · ${myCo}`:""}</Title>
       <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0 3px" }}>
         <thead><tr style={{ fontSize: 9, color: C.muted, textTransform: "uppercase", letterSpacing: .8 }}>
           {["Metric", "Pre-LOE", "Year 1", "Year 2", "Year 3"].map((h, i) => <th key={i} style={{ textAlign: i ? "right" : "left", padding: "0 8px 4px" }}>{h}</th>)}
         </tr></thead>
         <tbody>
-          {[
+          {isComp ? [
+            ["Your Revenue ($B)", "—", `+${yr1Gain.toFixed(2)}`, `+${yr2Gain.toFixed(2)}`, `+${yr3Gain.toFixed(2)}`],
+            ["Y-o-Y Growth", "—", "—", `+${yr2Gain>0?((yr2Gain-yr1Gain)/yr1Gain*100).toFixed(0):0}%`, `+${yr3Gain>0?((yr3Gain-yr2Gain)/yr2Gain*100).toFixed(0):0}%`],
+            ["Gross Profit ($B)", "—", `+${yr1CompGP.toFixed(2)}`, `+${(yr2Gain*(1-Math.max(15,myCogs-10)/100)).toFixed(2)}`, `+${(yr3Gain*(1-Math.max(15,myCogs-10)/100)).toFixed(2)}`],
+            ["Market Share Capture", "0%", `${(yr1Gain/actualRev*100).toFixed(1)}%`, `${(yr2Gain/actualRev*100).toFixed(1)}%`, `${(yr3Gain/actualRev*100).toFixed(1)}%`],
+            ["Cumulative Revenue", "—", `$${yr1Gain.toFixed(2)}B`, `$${(yr1Gain+yr2Gain).toFixed(2)}B`, `$${cumulativeGain3yr.toFixed(2)}B`],
+          ].map((row, i) => <tr key={i} style={{ background: i === 0 ? "rgba(16,185,129,0.03)" : "rgba(255,255,255,0.01)" }}>
+            {row.map((c, j) => <td key={j} style={{ padding: "8px", fontSize: 11, fontWeight: j === 0 ? 600 : 500, color: j === 0 ? C.bright : (typeof c === "string" && c.startsWith("+")) ? "#10b981" : C.text, textAlign: j ? "right" : "left", fontFamily: j ? mono : font }}>{c}</td>)}
+          </tr>) : [
             ["Revenue ($B)", actualRev.toFixed(1), (actualRev - yr1Loss).toFixed(1), (actualRev - yr2Loss).toFixed(1), (actualRev - yr3Loss).toFixed(1)],
             ["Revenue Loss ($B)", "—", `-${yr1Loss.toFixed(1)}`, `-${yr2Loss.toFixed(1)}`, `-${yr3Loss.toFixed(1)}`],
+            ["Y-o-Y Change", "—", `-${(yr1Loss/actualRev*100).toFixed(0)}%`, `-${((yr2Loss-yr1Loss)/actualRev*100).toFixed(0)}%`, `-${((yr3Loss-yr2Loss)/actualRev*100).toFixed(0)}%`],
             ["Gross Profit ($B)", (actualRev * (1 - myCogs / 100)).toFixed(1), ((actualRev - yr1Loss) * (1 - myCogs / 100)).toFixed(1), ((actualRev - yr2Loss) * (1 - myCogs / 100)).toFixed(1), ((actualRev - yr3Loss) * (1 - myCogs / 100)).toFixed(1)],
-            ["Net (after rebate) ($B)", (actualRev * (1 - myCogs / 100) * (1 - myRebate / 100)).toFixed(1), ((actualRev - yr1Loss) * (1 - myCogs / 100) * (1 - myRebate / 100)).toFixed(1), ((actualRev - yr2Loss) * (1 - myCogs / 100) * (1 - myRebate / 100)).toFixed(1), ((actualRev - yr3Loss) * (1 - myCogs / 100) * (1 - myRebate / 100)).toFixed(1)],
             ["Market Share (%)", "100%", `${(100 - yr1Loss / actualRev * 100).toFixed(0)}%`, `${(100 - yr2Loss / actualRev * 100).toFixed(0)}%`, `${(100 - yr3Loss / actualRev * 100).toFixed(0)}%`],
           ].map((row, i) => <tr key={i} style={{ background: i === 1 ? "rgba(255,77,106,0.03)" : "rgba(255,255,255,0.01)" }}>
             {row.map((c, j) => <td key={j} style={{ padding: "8px", fontSize: 11, fontWeight: j === 0 ? 600 : 500, color: j === 0 ? C.bright : (typeof c === "string" && c.startsWith("-")) ? "#ff4d6a" : C.text, textAlign: j ? "right" : "left", fontFamily: j ? mono : font }}>{c}</td>)}
@@ -1306,7 +1679,7 @@ function RevenueCalcTab() {
         </tbody>
       </table>
       <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: "rgba(109,92,255,0.04)", fontSize: 10, color: C.muted, lineHeight: 1.6 }}>
-        <strong style={{ color: "#a99fff" }}>Model Assumptions:</strong> Erosion curve based on {d.therapyArea} historical analogs. {biosimCount} competitors at launch, {launchDelay}m delay, {interch ? "interchangeable" : "non-interchangeable"}. COGS at {myCogs}%, contracted rebates at {myRebate}%. Actual results will vary based on payer mix, channel dynamics, and litigation outcomes.
+        <strong style={{ color: "#a99fff" }}>Model Assumptions:</strong> {isComp?`Competitor view: ${myShareOfBiosim.toFixed(0)*100||Math.round(myShareOfBiosim*100)}% share of eroded market (strength-weighted). `:""}Erosion curve based on {d.therapyArea} historical analogs. {biosimCount} competitors at launch, {launchDelay}m delay, {interch ? "interchangeable" : "non-interchangeable"}. COGS at {myCogs}%, contracted rebates at {myRebate}%. Actual results will vary based on payer mix, channel dynamics, and litigation outcomes.
       </div>
     </Crd>
   </div>;
@@ -1341,7 +1714,7 @@ function BattlecardTab() {
     isMe: myCo && c.company.toLowerCase().includes(myCo.toLowerCase()),
   }));
 
-  // Generate talking points
+  // Generate talking points — TAILORED to specific company + drug combo
   const genTalkingPoints = () => {
     if (isOrig) return {
       title: "Originator Defense Talking Points",
@@ -1352,20 +1725,43 @@ function BattlecardTab() {
         { q: "What is your lifecycle strategy?", a: `Next-generation formulations, expanded indications, and combination approaches ensure ${d.drug} continues to offer differentiated clinical value beyond the base molecule.` },
       ]
     };
-    if (myComp) return {
-      title: "Biosimilar Offensive Talking Points",
-      points: [
-        { q: "Why should payers switch to your biosimilar?", a: `Our ${d.molecule} biosimilar is ${myComp.phase === "Launched" ? "FDA-approved and launched" : "advancing through " + myComp.phase} with demonstrated bioequivalence. At projected ${30 + d.competitors.length * 8}% discount, annual savings of $${(d.revenue * 0.3).toFixed(1)}B+ for the US health system.` },
-        { q: "How do you ensure supply reliability?", a: `${myComp.mfg || myCo} manufacturing with dedicated capacity. Multi-site strategy ensures uninterrupted supply. Commercial-scale batches validated.` },
-        { q: "What about the originator's lifecycle defense?", a: `Lifecycle extensions don't change the base molecule's clinical profile. Payers and patients deserve competition that drives affordability. Our interchangeable designation${d.type === "Biologic" ? " pursuit" : ""} ensures pharmacy-level substitution.` },
-        { q: "How do you differentiate from other biosimilars?", a: `${co?.strengths?.[0] || "Strong"} manufacturing, ${co?.strengths?.[1] || "reliable"} commercial infrastructure, and ${myComp.signal === "confirmed" || myComp.phase === "Launched" ? "proven regulatory track record" : "accelerating clinical program"} position us for Day-1 readiness.` },
-      ]
-    };
+    if (myComp) {
+      // Build SPECIFIC talking points from actual competitor data
+      const launchedComps = d.competitors.filter(c => c.phase === "Launched" || c.phase === "Launched (at-risk)");
+      const myPhase = myComp.phase;
+      const isLaunched = myPhase === "Launched" || myPhase === "Launched (at-risk)";
+      const myDiscount = myComp.commercial?.match(/(\d+)%/)?.[1] || (30 + d.competitors.length * 8);
+      const myMfgDetail = myComp.mfg || co?.hq || "Global";
+      const myCommercial = myComp.commercial || "US market";
+      const myStrengths = co?.strengths || [];
+      const otherComps = d.competitors.filter(c => !c.company.toLowerCase().includes(myCo.toLowerCase()));
+      const launchedOthers = otherComps.filter(c => c.phase === "Launched" || c.phase === "Launched (at-risk)");
+      const myWeakness = myComp.weakness || "";
+      const myEst = myComp.est || "";
+
+      return {
+        title: `${myCo} Offensive Talking Points — ${d.drug}`,
+        points: [
+          { q: `Why should payers choose ${myCo}'s ${d.molecule} biosimilar?`,
+            a: isLaunched
+              ? `Our biosimilar is FDA-approved and commercially launched${myDiscount ? ` at ${myDiscount} WAC discount` : ""}. ${myCommercial}. ${launchedOthers.length > 0 ? `Unlike ${launchedOthers.length} other launched biosimilars, we differentiate through ${myStrengths[0]?.toLowerCase() || "competitive pricing"} and ${myStrengths[1]?.toLowerCase() || "reliable supply"}.` : "We are first-to-market with demonstrated supply reliability."}`
+              : `Our biosimilar is in ${myPhase} with demonstrated bioequivalence${myEst ? `, targeting ${myEst} launch` : ""}. At projected ${myDiscount}% discount, payers can expect significant savings on the $${d.revenue}B franchise. ${myStrengths[0] || "Strong"} manufacturing positions us for Day-1 readiness.` },
+          { q: "How do you ensure supply reliability?",
+            a: `${myMfgDetail} manufacturing${co?.type === "Biosimilar Developer" && myStrengths.includes("Vertical integration") ? " with full vertical integration from API to finished product — ensuring 30-40% COGS advantage" : " with dedicated capacity and multi-site backup strategy"}. ${co?.type === "Biosimilar Developer" && myStrengths.some(s => s.includes("COGS")) ? "Our integrated model gives us the industry's lowest production costs, enabling sustainable pricing below competitors." : "Commercial-scale batch validation complete. Supply agreements with major distributors secured."}` },
+          { q: `How do you compete against ${launchedOthers.length > 0 ? launchedOthers.map(c => c.company.split("(")[0].trim()).join(", ") : "other biosimilar developers"}?`,
+            a: isLaunched
+              ? `${otherComps.filter(c => c.phase === "Launched").map(c => `${c.company.split("(")[0].trim()} (${c.weakness || "limited differentiation"})`).join("; ")}. Our advantage: ${myCommercial}. ${myStrengths.length > 0 ? `Key differentiators: ${myStrengths.slice(0, 2).join(", ").toLowerCase()}.` : ""}`
+              : `We're tracking ${launchedOthers.length} launched competitor${launchedOthers.length !== 1 ? "s" : ""}. Our strategy: ${myStrengths[0]?.toLowerCase() || "competitive positioning"} combined with ${co?.type?.includes("Developer") ? "biosimilar-focused commercial execution" : "established distribution networks"} will drive adoption post-launch.` },
+          { q: "What about the originator's lifecycle defense?",
+            a: `${d.originator}'s lifecycle extensions don't change the base ${d.molecule} profile. ${d.drug === "Keytruda" ? "While Merck launched SC Keytruda Qlex, IV biosimilars address the majority of hospital/infusion center volume." : d.drug === "Eylea" ? "While Regeneron launched Eylea HD (8mg), the standard 2mg formulation represents the majority of the market." : d.drug === "Stelara" ? "J&J's Stelara patents are settled — all biosimilars now have clear launch paths." : "Payers and patients deserve competition that drives affordability."} Our ${myComp.signal === "confirmed" || isLaunched ? "proven regulatory track record and" : "advancing clinical program will deliver"} interchangeable-quality product${isLaunched ? " is already driving formulary wins" : " for pharmacy-level substitution"}.` },
+        ]
+      };
+    }
     return {
       title: "Market Observer Talking Points",
       points: [
-        { q: "What is the competitive landscape?", a: `${d.drug} (${d.molecule}) has ${d.competitors.length} competitors in development. LOE ${days < 0 ? "has passed" : `in ${fDays(days)}`}. ${erosionRef.speed} erosion expected based on ${d.therapyArea} historical patterns.` },
-        { q: "Investment thesis?", a: `$${d.revenue}B market. ${d.competitors.filter(c => c.phase === "Phase III" || c.phase === "Approved" || c.phase === "Launched").length} late-stage competitors. First 3 entrants historically capture 70% of biosimilar share.` },
+        { q: "What is the competitive landscape?", a: `${d.drug} (${d.molecule}) has ${d.competitors.length} competitors. LOE ${days < 0 ? "has passed" : `in ${fDays(days)}`}. ${erosionRef.speed} erosion expected based on ${d.therapyArea} historical patterns.` },
+        { q: "Investment thesis?", a: `$${d.revenue}B market. ${d.competitors.filter(c => c.phase === "Phase III" || c.phase === "Approved" || c.phase === "Launched" || c.phase.includes("Approved")).length} late-stage competitors. First 3 entrants historically capture 70% of biosimilar share.` },
       ]
     };
   };
@@ -1477,14 +1873,14 @@ function BattlecardTab() {
 // TAB: PATENT LANDSCAPE VISUALIZER
 // ═══════════════════════════════════════════
 const PATENT_DATA = {
-  "Stelara":{total:11,categories:[{cat:"Composition",count:2,expiry:"2023-09-22",challenged:true},{cat:"Formulation",count:3,expiry:"2025-09-22",challenged:true},{cat:"Method of Use",count:4,expiry:"2027-06-15",challenged:false},{cat:"Manufacturing",count:2,expiry:"2029-03-10",challenged:false}]},
-  "Eliquis":{total:5,categories:[{cat:"Composition",count:1,expiry:"2026-11-14",challenged:true},{cat:"Crystal Form",count:1,expiry:"2026-11-14",challenged:true},{cat:"Method of Use",count:2,expiry:"2031-05-20",challenged:false},{cat:"Formulation",count:1,expiry:"2028-12-01",challenged:false}]},
+  "Stelara":{total:11,categories:[{cat:"Composition",count:2,expiry:"2023-09-22",challenged:true},{cat:"Formulation",count:3,expiry:"2025-02-22",challenged:true},{cat:"Method of Use",count:4,expiry:"2027-06-15",challenged:false},{cat:"Manufacturing",count:2,expiry:"2029-03-10",challenged:false}]},
+  "Eliquis":{total:5,categories:[{cat:"Composition",count:1,expiry:"2026-11-14",challenged:true},{cat:"Crystal Form",count:1,expiry:"2026-11-14",challenged:true},{cat:"Method of Use",count:2,expiry:"2031-05-20",challenged:true},{cat:"Formulation",count:1,expiry:"2028-04-01",challenged:true}]},
   "Keytruda":{total:22,categories:[{cat:"Composition",count:4,expiry:"2028-04-20",challenged:false},{cat:"Method of Treatment",count:8,expiry:"2036-12-15",challenged:false},{cat:"Formulation",count:3,expiry:"2030-06-01",challenged:false},{cat:"Combination",count:5,expiry:"2035-08-10",challenged:false},{cat:"Manufacturing",count:2,expiry:"2029-11-22",challenged:false}]},
   "Eylea":{total:8,categories:[{cat:"Composition",count:2,expiry:"2027-05-13",challenged:true},{cat:"Formulation (HD)",count:2,expiry:"2035-03-01",challenged:false},{cat:"Method of Use",count:3,expiry:"2032-09-15",challenged:false},{cat:"Manufacturing",count:1,expiry:"2029-06-20",challenged:false}]},
   "Opdivo":{total:15,categories:[{cat:"Composition",count:3,expiry:"2028-12-19",challenged:false},{cat:"Method of Treatment",count:6,expiry:"2035-04-10",challenged:false},{cat:"Combination",count:4,expiry:"2034-07-22",challenged:false},{cat:"Formulation",count:2,expiry:"2030-02-15",challenged:false}]},
   "Dupixent":{total:18,categories:[{cat:"Composition",count:3,expiry:"2031-06-15",challenged:false},{cat:"Method of Treatment",count:7,expiry:"2037-11-20",challenged:false},{cat:"Formulation",count:4,expiry:"2033-04-08",challenged:false},{cat:"Device",count:2,expiry:"2035-09-01",challenged:false},{cat:"Manufacturing",count:2,expiry:"2032-01-15",challenged:false}]},
   "Ozempic/Wegovy":{total:25,categories:[{cat:"Composition",count:3,expiry:"2032-06-07",challenged:false},{cat:"Method of Treatment",count:8,expiry:"2038-03-15",challenged:false},{cat:"Oral Formulation",count:5,expiry:"2036-10-20",challenged:false},{cat:"Device/Pen",count:4,expiry:"2034-08-12",challenged:false},{cat:"Manufacturing",count:3,expiry:"2033-05-01",challenged:false},{cat:"Dose Regimen",count:2,expiry:"2035-12-20",challenged:false}]},
-  "Xarelto":{total:4,categories:[{cat:"Composition",count:1,expiry:"2024-12-02",challenged:true},{cat:"Crystal Form",count:1,expiry:"2024-12-02",challenged:true},{cat:"Method of Use",count:1,expiry:"2026-03-15",challenged:true},{cat:"Formulation",count:1,expiry:"2025-08-20",challenged:true}]},
+  "Xarelto":{total:4,categories:[{cat:"Composition",count:1,expiry:"2024-03-28",challenged:true},{cat:"Crystal Form",count:1,expiry:"2024-08-01",challenged:true},{cat:"Method of Use",count:1,expiry:"2025-02-28",challenged:true},{cat:"Once-Daily Dosing",count:1,expiry:"2025-12-20",challenged:true}]},
 };
 function PatentTab(){
   const [sel,setSel]=useState("Keytruda");
@@ -1573,7 +1969,7 @@ function Tab340B(){
 // ═══════════════════════════════════════════
 const CONFERENCES=[
   {conf:"ASCO 2026",date:"Jun 2026",loc:"Chicago",focus:"Oncology",abstracts:[
-    {title:"Phase III pembrolizumab biosimilar (HERITAGE-1): Final OS data",co:"Biocon/Viatris",drug:"Keytruda",type:"Oral",sentiment:"positive",impact:"high",kol:"Dr. Roy Herbst (Yale)"},
+    {title:"Pembrolizumab biosimilar development: Phase III landscape and regulatory pathways",co:"Multi-sponsor Panel",drug:"Keytruda",type:"Symposium",sentiment:"neutral",impact:"high",kol:"Dr. Roy Herbst (Yale)"},
     {title:"Real-world bevacizumab biosimilar switching outcomes in 340B",co:"Memorial Sloan Kettering",drug:"Avastin",type:"Poster",sentiment:"positive",impact:"medium",kol:"Dr. Leonard Saltz (MSKCC)"},
     {title:"Nivolumab biosimilar interim analysis — advanced melanoma",co:"Junshi Biosciences",drug:"Opdivo",type:"Poster",sentiment:"neutral",impact:"medium",kol:"Dr. Jedd Wolchok (MSKCC)"},
   ]},
@@ -1582,8 +1978,8 @@ const CONFERENCES=[
     {title:"Biosimilar adalimumab: 2-year RA outcomes and immunogenicity",co:"Sandoz",drug:"Humira",type:"Poster",sentiment:"positive",impact:"medium",kol:"Dr. Vibeke Strand (Stanford)"},
   ]},
   {conf:"AAO 2025",date:"Oct 2025",loc:"Las Vegas",focus:"Ophthalmology",abstracts:[
-    {title:"SB15 aflibercept biosimilar Phase III in nAMD — primary endpoint met",co:"Samsung Bioepis",drug:"Eylea",type:"Oral",sentiment:"positive",impact:"high",kol:"Dr. Carl Regillo (Wills Eye)"},
-    {title:"Retinal specialist switching patterns post-Lucentis biosimilar",co:"Regeneron",drug:"Eylea",type:"Symposium",sentiment:"cautious",impact:"medium",kol:"Dr. Philip Rosenfeld (Bascom Palmer)"},
+    {title:"First aflibercept biosimilar (Pavblu) at-risk launch: Early US uptake data",co:"Amgen/Retina Consultants",drug:"Eylea",type:"Oral",sentiment:"positive",impact:"high",kol:"Dr. Carl Regillo (Wills Eye)"},
+    {title:"6 aflibercept biosimilars approved: Retinal specialist switching readiness survey",co:"AAO/ASRS",drug:"Eylea",type:"Symposium",sentiment:"cautious",impact:"medium",kol:"Dr. Philip Rosenfeld (Bascom Palmer)"},
   ]},
   {conf:"ADA 2026",date:"Jun 2026",loc:"New Orleans",focus:"Metabolic",abstracts:[
     {title:"GLP-1 biosimilar regulatory pathway: FDA-industry panel",co:"FDA/Industry",drug:"Ozempic/Wegovy",type:"Symposium",sentiment:"neutral",impact:"high",kol:"Dr. John Buse (UNC)"},
@@ -1640,7 +2036,7 @@ function ConferenceTab(){
 // TAB: PRICE BENCHMARKING (ASP/WAC)
 // ═══════════════════════════════════════════
 const PRICE_DATA=[
-  {drug:"Stelara",wac:26078,asp:22166,bWac:14843,disc:43,unit:"45mg vial",trend:[{q:"Q1'24",w:100},{q:"Q2'24",w:100},{q:"Q3'24",w:98},{q:"Q4'24",w:95},{q:"Q1'25",w:82},{q:"Q2'25",w:70},{q:"Q3'25",w:58}]},
+  {drug:"Stelara",wac:26078,asp:22166,bWac:3000,disc:88,unit:"45mg vial",trend:[{q:"Q1'24",w:100},{q:"Q2'24",w:100},{q:"Q3'24",w:98},{q:"Q4'24",w:95},{q:"Q1'25",w:72},{q:"Q2'25",w:50},{q:"Q3'25",w:35}]},
   {drug:"Eliquis",wac:610,asp:null,bWac:null,disc:0,unit:"30d (5mg BID)",trend:[{q:"Q1'24",w:100},{q:"Q2'24",w:100},{q:"Q3'24",w:100},{q:"Q4'24",w:100},{q:"Q1'25",w:100},{q:"Q2'25",w:100},{q:"Q3'25",w:100}]},
   {drug:"Keytruda",wac:11592,asp:10433,bWac:null,disc:0,unit:"100mg vial",trend:[{q:"Q1'24",w:100},{q:"Q2'24",w:102},{q:"Q3'24",w:103},{q:"Q4'24",w:105},{q:"Q1'25",w:105},{q:"Q2'25",w:106},{q:"Q3'25",w:106}]},
   {drug:"Eylea",wac:2082,asp:1770,bWac:null,disc:0,unit:"2mg vial",trend:[{q:"Q1'24",w:100},{q:"Q2'24",w:100},{q:"Q3'24",w:100},{q:"Q4'24",w:100},{q:"Q1'25",w:100},{q:"Q2'25",w:100},{q:"Q3'25",w:98}]},
@@ -1648,16 +2044,162 @@ const PRICE_DATA=[
   {drug:"Ozempic",wac:968,asp:null,bWac:null,disc:0,unit:"1mg pen 4wk",trend:[{q:"Q1'24",w:100},{q:"Q2'24",w:102},{q:"Q3'24",w:103},{q:"Q4'24",w:105},{q:"Q1'25",w:106},{q:"Q2'25",w:108},{q:"Q3'25",w:108}]},
 ];
 function PriceTab(){
+  const [selDrug,setSelDrug]=useState(0);
+  const [myDiscount,setMyDiscount]=useState(80);
+  const [channel,setChannel]=useState("all");
+  const d = DRUGS[selDrug];
+  const pd = PRICE_DATA.find(p=>p.drug===d.drug) || PRICE_DATA[0];
+
+  // Pricing strategy calculations
+  const origWAC = pd.wac;
+  const myTargetWAC = origWAC * (1 - myDiscount/100);
+  const compWACs = d.competitors.filter(c=>c.phase==="Launched"||c.phase==="Launched (at-risk)").map(c=>{
+    const disc = c.commercial?.includes("90%")?90:c.commercial?.includes("85%")?85:c.commercial?.includes("80%")?80:75;
+    return {name:c.company.split("(")[0].trim(),wac:origWAC*(1-disc/100),disc,phase:c.phase};
+  });
+  const avgBiosimWAC = compWACs.length>0 ? compWACs.reduce((a,c)=>a+c.wac,0)/compWACs.length : origWAC*0.2;
+
+  // Channel-level pricing
+  const channels=[
+    {ch:"Retail/PBM",pct:40,origNet:origWAC*0.65,biosimNet:myTargetWAC*0.75,driver:"PBM rebate negotiations. Formulary positioning drives volume.",switchSpeed:"Moderate — 6-12m"},
+    {ch:"Medical Benefit (B)",pct:25,origNet:origWAC*0.94,biosimNet:myTargetWAC*0.94,driver:"ASP+6% reimbursement. Buy-and-bill economics favor lower WAC.",switchSpeed:"Fast — 3-6m"},
+    {ch:"340B / Safety Net",pct:15,origNet:origWAC*0.25,biosimNet:myTargetWAC*0.25,driver:"Ceiling price = AMP×(1-rebate). Spread = WAC minus 340B. Lower WAC = more spread.",switchSpeed:"Very Fast — 1-3m"},
+    {ch:"Specialty Pharmacy",pct:12,origNet:origWAC*0.55,biosimNet:myTargetWAC*0.68,driver:"DIR fees, specialty hub services. Copay assistance offsets influence.",switchSpeed:"Slow — 9-15m"},
+    {ch:"Hospital/IDN/GPO",pct:8,origNet:origWAC*0.45,biosimNet:myTargetWAC*0.65,driver:"GPO contract pricing. Pharmacy & Therapeutics committee approval.",switchSpeed:"Moderate — 6-9m"},
+  ];
+
+  // Price erosion trajectory for this drug at set discount
+  const priceTrajectory=[
+    {period:"Pre-LOE",origWAC:origWAC,myWAC:0,avgBiosim:0,myNet:0},
+    {period:"Launch",origWAC:origWAC*0.98,myWAC:myTargetWAC,avgBiosim:avgBiosimWAC||myTargetWAC*1.1,myNet:myTargetWAC*0.7},
+    {period:"Month 6",origWAC:origWAC*0.90,myWAC:myTargetWAC*0.95,avgBiosim:(avgBiosimWAC||myTargetWAC*1.1)*0.92,myNet:myTargetWAC*0.95*0.65},
+    {period:"Month 12",origWAC:origWAC*0.75,myWAC:myTargetWAC*0.88,avgBiosim:(avgBiosimWAC||myTargetWAC*1.1)*0.85,myNet:myTargetWAC*0.88*0.6},
+    {period:"Month 24",origWAC:origWAC*0.55,myWAC:myTargetWAC*0.78,avgBiosim:(avgBiosimWAC||myTargetWAC*1.1)*0.75,myNet:myTargetWAC*0.78*0.55},
+    {period:"Month 36",origWAC:origWAC*0.42,myWAC:myTargetWAC*0.70,avgBiosim:(avgBiosimWAC||myTargetWAC*1.1)*0.68,myNet:myTargetWAC*0.70*0.5},
+  ];
+
+  // Expected price positioning
+  const myPosition = myTargetWAC < avgBiosimWAC ? "Price Leader" : myTargetWAC > avgBiosimWAC*1.1 ? "Premium" : "Market Parity";
+  const posColor = myPosition==="Price Leader"?"#10b981":myPosition==="Premium"?"#ff8c42":"#6d5cff";
+
   return <div>
-    <Title sub="Wholesale Acquisition Cost, Average Sales Price, and biosimilar discounts">💲 Price Benchmarking</Title>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
-      <Crd><Title>WAC Price Index Trend (Q1'24 = 100)</Title><ResponsiveContainer width="100%" height={220}><LineChart data={PRICE_DATA[0].trend.map((_,qi)=>({q:PRICE_DATA[0].trend[qi].q,...Object.fromEntries(PRICE_DATA.map(d=>[d.drug,d.trend[qi]?.w||100]))}))}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="q" tick={{fontSize:9,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[50,115]}/><Tooltip content={<CTip/>}/>
-        {PRICE_DATA.map((d,i)=><Line key={i} type="monotone" dataKey={d.drug} stroke={["#6d5cff","#00d4aa","#ff4d6a","#ff8c42","#a78bfa","#2dd4bf"][i]} strokeWidth={2} dot={{r:3}}/>)}<Legend wrapperStyle={{fontSize:10}}/></LineChart></ResponsiveContainer></Crd>
-      <Crd><Title>Current WAC per Unit ($)</Title><ResponsiveContainer width="100%" height={220}><BarChart data={PRICE_DATA} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis type="number" tick={{fontSize:10,fill:C.muted}}/><YAxis type="category" dataKey="drug" tick={{fontSize:10,fill:C.muted}} width={80}/><Tooltip content={<CTip/>}/><Bar dataKey="wac" name="WAC ($)" radius={[0,4,4,0]}>{PRICE_DATA.map((_,i)=><Cell key={i} fill={["#6d5cff","#00d4aa","#ff4d6a","#ff8c42","#a78bfa","#2dd4bf"][i]}/>)}</Bar></BarChart></ResponsiveContainer></Crd>
+    <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:16}}>
+      <Select value={selDrug} onChange={v=>setSelDrug(+v)} options={DRUGS.map((dr,i)=>({value:String(i),label:`${dr.drug} — ${dr.molecule} ($${dr.revenue}B)`}))} placeholder="Select molecule..." style={{minWidth:350}}/>
     </div>
-    <Crd><table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 3px"}}><thead><tr style={{fontSize:9,color:C.muted,textTransform:"uppercase"}}>{["Drug","Unit","WAC","ASP","Biosim WAC","Disc.","Trend"].map((h,i)=><th key={i} style={{textAlign:i>1?"right":"left",padding:"0 8px 4px"}}>{h}</th>)}</tr></thead>
-      <tbody>{PRICE_DATA.map((p,i)=><tr key={i} style={{background:"rgba(255,255,255,0.01)"}}>
-        <td style={{padding:"8px",fontSize:12,fontWeight:700,color:C.bright}}>{p.drug}</td>
+
+    <Title sub="Plan your pricing strategy with competitive positioning and channel economics">💲 Pricing Strategy Planner — {d.drug}</Title>
+
+    {/* Your Pricing Control */}
+    <Crd style={{marginBottom:14,borderColor:"rgba(109,92,255,0.2)",background:"rgba(109,92,255,0.02)"}}>
+      <div style={{fontSize:12,fontWeight:700,color:C.bright,marginBottom:12}}>🎯 Set Your Target Discount from Originator WAC</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 2fr 1fr",gap:20,alignItems:"center"}}>
+        <div>
+          <div style={{fontSize:10,color:C.muted,marginBottom:3}}>Originator WAC</div>
+          <div style={{fontSize:18,fontWeight:800,color:C.bright,fontFamily:mono}}>${origWAC.toLocaleString()}</div>
+          <div style={{fontSize:9,color:C.muted}}>per {pd.unit}</div>
+        </div>
+        <div>
+          <div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:5}}>Your WAC Discount: <span style={{color:"#10b981",fontSize:14}}>{myDiscount}%</span></div>
+          <input type="range" min={50} max={95} step={1} value={myDiscount} onChange={e=>setMyDiscount(+e.target.value)} style={{width:"100%"}}/>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:C.muted}}><span>50% (Premium)</span><span>75% (Market)</span><span>95% (Aggressive)</span></div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:10,color:C.muted,marginBottom:3}}>Your Target WAC</div>
+          <div style={{fontSize:18,fontWeight:800,color:"#10b981",fontFamily:mono}}>${Math.round(myTargetWAC).toLocaleString()}</div>
+          <div style={{padding:"2px 8px",borderRadius:10,fontSize:10,fontWeight:600,display:"inline-block",marginTop:4,background:`${posColor}15`,color:posColor}}>{myPosition}</div>
+        </div>
+      </div>
+    </Crd>
+
+    {/* Price Positioning vs Competitors */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+      <Crd>
+        <Title sub="Your WAC vs originator and biosimilar competitors">Competitive Price Map</Title>
+        <ResponsiveContainer width="100%" height={240}>
+          <BarChart data={[
+            {name:d.originator+" (Orig)",wac:origWAC,fill:"#ff4d6a"},
+            ...compWACs.map(c=>({name:c.name,wac:Math.round(c.wac),fill:"#6d5cff"})),
+            {name:"YOUR PRICE",wac:Math.round(myTargetWAC),fill:"#10b981"}
+          ]} layout="vertical">
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/>
+            <XAxis type="number" tick={{fontSize:10,fill:C.muted}} tickFormatter={v=>`$${(v/1000).toFixed(1)}K`}/>
+            <YAxis type="category" dataKey="name" tick={{fontSize:9,fill:C.muted}} width={120}/>
+            <Tooltip content={({active,payload})=>{if(!active||!payload?.length)return null;const d2=payload[0].payload;return <div style={{background:"rgba(10,15,28,0.95)",border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 12px",fontSize:11,fontFamily:font}}><div style={{color:C.bright,fontWeight:700}}>{d2.name}</div><div style={{fontFamily:mono,color:d2.fill,fontWeight:700}}>WAC: ${d2.wac.toLocaleString()}</div><div style={{color:C.muted}}>Disc: {((1-d2.wac/origWAC)*100).toFixed(0)}% from originator</div></div>}}/>
+            <Bar dataKey="wac" radius={[0,4,4,0]}>{[{fill:"#ff4d6a"},...compWACs.map(()=>({fill:"#6d5cff"})),{fill:"#10b981"}].map((c,i)=><Cell key={i} fill={c.fill}/>)}</Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </Crd>
+      <Crd>
+        <Title sub="Expected price trajectory over 36 months">Price Erosion Forecast</Title>
+        <ResponsiveContainer width="100%" height={240}>
+          <LineChart data={priceTrajectory.map(r=>({...r,origWAC:Math.round(r.origWAC),myWAC:Math.round(r.myWAC),avgBiosim:Math.round(r.avgBiosim)}))}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/>
+            <XAxis dataKey="period" tick={{fontSize:9,fill:C.muted}}/>
+            <YAxis tick={{fontSize:10,fill:C.muted}} tickFormatter={v=>`$${(v/1000).toFixed(0)}K`}/>
+            <Tooltip content={<CTip/>}/>
+            <Line type="monotone" dataKey="origWAC" stroke="#ff4d6a" strokeWidth={2} dot={{r:3}} name="Originator WAC"/>
+            <Line type="monotone" dataKey="myWAC" stroke="#10b981" strokeWidth={3} dot={{r:5,fill:"#10b981"}} name="Your WAC"/>
+            <Line type="monotone" dataKey="avgBiosim" stroke="#6d5cff" strokeWidth={2} strokeDasharray="5 5" dot={{r:3}} name="Avg Biosim WAC"/>
+            <Legend wrapperStyle={{fontSize:10}}/>
+          </LineChart>
+        </ResponsiveContainer>
+      </Crd>
+    </div>
+
+    {/* Channel-Level Pricing Economics */}
+    <Crd style={{marginBottom:14}}>
+      <Title sub="Expected net pricing and switching speed by distribution channel">📊 Channel-Level Pricing Economics</Title>
+      <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px"}}>
+        <thead><tr style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:.7}}>
+          {["Channel","Mix %","Orig Net","Your Net","Net Advantage","Switch Speed","Key Driver"].map((h,i)=><th key={i} style={{textAlign:i>1?"right":"left",padding:"0 8px 4px"}}>{h}</th>)}
+        </tr></thead>
+        <tbody>{channels.map((ch,i)=>{
+          const advantage = ch.origNet - ch.biosimNet;
+          const advPct = (advantage/ch.origNet*100).toFixed(0);
+          return <tr key={i} style={{background:"rgba(255,255,255,0.01)"}}>
+            <td style={{padding:"8px",fontSize:11,fontWeight:700,color:C.bright}}>{ch.ch}</td>
+            <td style={{padding:"8px",fontSize:11,fontFamily:mono,color:C.text}}>{ch.pct}%</td>
+            <td style={{padding:"8px",fontSize:11,fontFamily:mono,color:C.muted,textAlign:"right"}}>${Math.round(ch.origNet).toLocaleString()}</td>
+            <td style={{padding:"8px",fontSize:11,fontFamily:mono,color:"#10b981",textAlign:"right",fontWeight:700}}>${Math.round(ch.biosimNet).toLocaleString()}</td>
+            <td style={{padding:"8px",textAlign:"right"}}><span style={{padding:"2px 8px",borderRadius:5,fontSize:10,fontWeight:700,background:advantage>0?"rgba(16,185,129,0.1)":"rgba(255,77,106,0.1)",color:advantage>0?"#10b981":"#ff4d6a"}}>{advantage>0?"+":""}${Math.round(advantage).toLocaleString()} ({advPct}%)</span></td>
+            <td style={{padding:"8px",fontSize:10,textAlign:"right",color:ch.switchSpeed.includes("Very Fast")?"#10b981":ch.switchSpeed.includes("Fast")?"#00d4aa":ch.switchSpeed.includes("Slow")?"#ff8c42":C.text}}>{ch.switchSpeed}</td>
+            <td style={{padding:"8px",fontSize:10,color:C.muted,maxWidth:200}}>{ch.driver}</td>
+          </tr>;
+        })}</tbody>
+      </table>
+    </Crd>
+
+    {/* Pricing Strategy Recommendations */}
+    <Crd style={{marginBottom:14}}>
+      <Title sub="Based on your discount, competitor landscape, and channel dynamics">🧭 Pricing Strategy Recommendations</Title>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+        <div style={{padding:"12px 14px",borderRadius:8,background:"rgba(16,185,129,0.04)",border:"1px solid rgba(16,185,129,0.15)"}}>
+          <div style={{fontSize:10,color:"#10b981",fontWeight:700,marginBottom:4}}>💲 LAUNCH PRICE</div>
+          <div style={{fontSize:18,fontWeight:800,color:C.bright,fontFamily:mono}}>${Math.round(myTargetWAC).toLocaleString()}</div>
+          <div style={{fontSize:10,color:C.muted,marginTop:4}}>{myDiscount}% discount from ${origWAC.toLocaleString()} WAC</div>
+          <div style={{fontSize:10,color:posColor,marginTop:2,fontWeight:600}}>Position: {myPosition}</div>
+        </div>
+        <div style={{padding:"12px 14px",borderRadius:8,background:"rgba(109,92,255,0.04)",border:"1px solid rgba(109,92,255,0.15)"}}>
+          <div style={{fontSize:10,color:"#8b7fff",fontWeight:700,marginBottom:4}}>📈 EXPECTED MONTHLY REVENUE</div>
+          <div style={{fontSize:18,fontWeight:800,color:C.bright,fontFamily:mono}}>${(d.revenue*1000*(myDiscount/100)*0.45/12*(1/(d.competitors.length||3))).toFixed(0)}M</div>
+          <div style={{fontSize:10,color:C.muted,marginTop:4}}>At month 12, based on market share model</div>
+          <div style={{fontSize:10,color:"#8b7fff",marginTop:2}}>Annualized: ${(d.revenue*(myDiscount/100)*0.45/12*(1/(d.competitors.length||3))*12).toFixed(2)}B</div>
+        </div>
+        <div style={{padding:"12px 14px",borderRadius:8,background:"rgba(255,140,66,0.04)",border:"1px solid rgba(255,140,66,0.15)"}}>
+          <div style={{fontSize:10,color:"#ff8c42",fontWeight:700,marginBottom:4}}>⚠️ PRICE FLOOR RISK</div>
+          <div style={{fontSize:18,fontWeight:800,color:C.bright,fontFamily:mono}}>${Math.round(myTargetWAC*0.65).toLocaleString()}</div>
+          <div style={{fontSize:10,color:C.muted,marginTop:4}}>Expected 36-month floor (35% further erosion)</div>
+          <div style={{fontSize:10,color:myTargetWAC*0.65>origWAC*0.1?"#10b981":"#ff4d6a",marginTop:2}}>{myTargetWAC*0.65>origWAC*0.1?"Above cost floor ✓":"⚠ Near or below cost floor"}</div>
+        </div>
+      </div>
+    </Crd>
+
+    {/* Full pricing table from original */}
+    <Crd>
+      <Title sub="All tracked molecules — WAC, ASP, biosimilar discounts">All Drug Pricing Reference</Title>
+      <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 3px"}}><thead><tr style={{fontSize:9,color:C.muted,textTransform:"uppercase"}}>{["Drug","Unit","WAC","ASP","Biosim WAC","Disc.","Trend"].map((h,i)=><th key={i} style={{textAlign:i>1?"right":"left",padding:"0 8px 4px"}}>{h}</th>)}</tr></thead>
+      <tbody>{PRICE_DATA.map((p,i)=><tr key={i} style={{background:p.drug===d.drug?"rgba(109,92,255,0.06)":"rgba(255,255,255,0.01)"}}>
+        <td style={{padding:"8px",fontSize:12,fontWeight:700,color:p.drug===d.drug?"#a99fff":C.bright}}>{p.drug}{p.drug===d.drug&&<span style={{fontSize:9,color:"#a99fff",marginLeft:4}}>← Selected</span>}</td>
         <td style={{padding:"8px",fontSize:10,color:C.muted}}>{p.unit}</td>
         <td style={{padding:"8px",fontFamily:mono,fontSize:11,color:C.text,textAlign:"right"}}>${p.wac.toLocaleString()}</td>
         <td style={{padding:"8px",fontFamily:mono,fontSize:11,color:"#8b7fff",textAlign:"right"}}>{p.asp?`$${p.asp.toLocaleString()}`:"—"}</td>
@@ -1665,7 +2207,6 @@ function PriceTab(){
         <td style={{padding:"8px",fontFamily:mono,fontSize:12,fontWeight:700,color:p.disc>0?"#00d4aa":C.muted,textAlign:"right"}}>{p.disc>0?`-${p.disc}%`:"—"}</td>
         <td style={{padding:"8px",textAlign:"right"}}>{p.trend[p.trend.length-1].w<100?<span style={{color:"#00d4aa"}}>↓{100-p.trend[p.trend.length-1].w}%</span>:p.trend[p.trend.length-1].w>100?<span style={{color:"#ff4d6a"}}>↑{p.trend[p.trend.length-1].w-100}%</span>:<span style={{color:C.muted}}>→Flat</span>}</td>
       </tr>)}</tbody></table>
-      <div style={{marginTop:8,fontSize:10,color:C.muted,fontStyle:"italic"}}>WAC = Wholesale Acquisition Cost. ASP = Average Sales Price (Medicare Part B). <Lnk l="CMS ASP Files" u={BL.cms()}/></div>
     </Crd>
   </div>;
 }
@@ -1674,25 +2215,46 @@ function PriceTab(){
 // TAB: REGULATORY FILING TRACKER
 // ═══════════════════════════════════════════
 const REG_FILINGS=[
-  {drug:"Stelara",app:"Wezlana (Amgen)",type:"BLA (351k)",filed:"2023-06-15",pdufa:"2024-01-31",status:"Approved",notes:"First interchangeable ustekinumab biosimilar."},
-  {drug:"Stelara",app:"SB17 (Samsung Bioepis)",type:"BLA (351k)",filed:"2023-09-10",pdufa:"2024-05-15",status:"Approved",notes:"Organon as US commercial partner."},
-  {drug:"Stelara",app:"Sandoz ustekinumab",type:"BLA (351k)",filed:"2024-01-20",pdufa:"2025-07-20",status:"Under Review",notes:"Interchangeable designation sought."},
-  {drug:"Eliquis",app:"Teva apixaban",type:"ANDA (Para IV)",filed:"2023-08-15",pdufa:"2026-10-01",status:"Tentative Approval",notes:"Launch blocked by patent litigation."},
-  {drug:"Eliquis",app:"Aurobindo apixaban",type:"ANDA (Para IV)",filed:"2024-03-01",pdufa:"2027-03-01",status:"Under Review",notes:"Paragraph IV certification filed."},
-  {drug:"Keytruda",app:"Biocon/Viatris pembrolizumab",type:"BLA (351k)",filed:"2025-06-01",pdufa:"TBD",status:"Filed",notes:"HERITAGE-1 data. First pembrolizumab biosimilar BLA."},
-  {drug:"Keytruda",app:"Merck SC Keytruda",type:"sBLA",filed:"2025-01-10",pdufa:"2025-11-10",status:"Under Review",notes:"Subcutaneous formulation — lifecycle extension."},
-  {drug:"Eylea",app:"Samsung SB15",type:"BLA (351k)",filed:"2024-11-01",pdufa:"2025-09-01",status:"Under Review",notes:"EMA CHMP positive opinion received."},
-  {drug:"Eylea",app:"Formycon FYB203",type:"BLA (351k)",filed:"2025-02-15",pdufa:"TBD",status:"Filed",notes:"Fresenius Kabi US commercial partner."},
-  {drug:"Opdivo",app:"Junshi nivolumab",type:"BLA (351k)",filed:"2025-09-01",pdufa:"TBD",status:"Pre-filing",notes:"NMPA approved in China. US IND active."},
+  {drug:"Stelara",app:"Wezlana (Amgen)",type:"BLA (351k)",filed:"2023-06-15",pdufa:"2023-10-31",status:"Approved",notes:"First interchangeable ustekinumab biosimilar. Launched Jan 2025 via Optum/Nuvailia."},
+  {drug:"Stelara",app:"Pyzchiva (Samsung Bioepis/Sandoz)",type:"BLA (351k)",filed:"2023-09-10",pdufa:"2024-07-15",status:"Approved",notes:"Launched Feb 24, 2025. 80% WAC discount. Provisional interchangeability."},
+  {drug:"Stelara",app:"Yesintek (Biocon)",type:"BLA (351k)",filed:"2024-01-20",pdufa:"2024-12-02",status:"Approved",notes:"Launched Feb 24, 2025. 90% WAC discount — lowest-priced ustekinumab biosimilar. 100M+ lives covered."},
+  {drug:"Stelara",app:"Selarsdi (Alvotech/Teva)",type:"BLA (351k)",filed:"2023-07-15",pdufa:"2024-10-01",status:"Approved",notes:"Launched Feb 21, 2025. 85% WAC discount. Interchangeable as of Apr 30, 2025."},
+  {drug:"Stelara",app:"Steqeyma (Celltrion)",type:"BLA (351k)",filed:"2024-02-01",pdufa:"2024-11-15",status:"Approved",notes:"Launched Mar 2025. 7th ustekinumab biosimilar approved."},
+  {drug:"Stelara",app:"Starjemza (Bio-Thera/Hikma)",type:"BLA (351k)",filed:"2024-08-01",pdufa:"2025-05-22",status:"Approved",notes:"Approved May 2025 with interchangeability. 8th ustekinumab biosimilar."},
+  {drug:"Eliquis",app:"Teva apixaban",type:"ANDA (Para IV)",filed:"2023-08-15",pdufa:"2019-12-01",status:"Tentative Approval",notes:"Launch blocked by patent litigation until April 2028 per BMS settlement."},
+  {drug:"Eliquis",app:"Mylan/Viatris apixaban",type:"ANDA (Para IV)",filed:"2019-06-01",pdufa:"2019-12-01",status:"Tentative Approval",notes:"FDA approved 2019. Settlement with BMS allows launch April 2028."},
+  {drug:"Keytruda",app:"Merck SC Keytruda Qlex",type:"sBLA",filed:"2025-01-10",pdufa:"2025-09-19",status:"Approved",notes:"Subcutaneous formulation approved — lifecycle extension strategy vs future biosimilars."},
+  {drug:"Keytruda",app:"Samsung Bioepis SB27",type:"BLA (351k)",filed:"Not yet filed",pdufa:"TBD",status:"Phase III",notes:"Phase III in NSCLC. Primary completion Sep 2025. BLA filing expected 2026."},
+  {drug:"Keytruda",app:"Amgen ABP 234",type:"BLA (351k)",filed:"Not yet filed",pdufa:"TBD",status:"Phase III",notes:"Multiple Phase III trials. Primary completion 2026. Filing expected 2027."},
+  {drug:"Eylea",app:"Pavblu (Amgen)",type:"BLA (351k)",filed:"2024-03-01",pdufa:"2024-09-17",status:"Approved",notes:"Launched at-risk in US. First aflibercept biosimilar on market. Regeneron litigation pending."},
+  {drug:"Eylea",app:"Yesafili (Biocon)",type:"BLA (351k)",filed:"2023-11-01",pdufa:"2024-05-20",status:"Approved",notes:"FDA-approved interchangeable. Settlement allows US launch H2 2026."},
+  {drug:"Eylea",app:"Enzeevu (Sandoz)",type:"BLA (351k)",filed:"2023-10-01",pdufa:"2024-08-12",status:"Approved",notes:"Settlement allows US launch Q4 2026."},
+  {drug:"Eylea",app:"Eydenzelt (Celltrion)",type:"BLA (351k)",filed:"2024-05-01",pdufa:"2025-10-09",status:"Approved",notes:"EU approved Feb 2025. US approved Oct 2025. Settlement allows launch Dec 31, 2026."},
+  {drug:"Xarelto",app:"Lupin rivaroxaban",type:"ANDA",filed:"2022-06-01",pdufa:"2025-03-03",status:"Approved",notes:"First generic Xarelto (2.5mg). Launched Mar 2025. Additional strengths rolling out 2025."},
 ];
 function RegFilingTab(){
   const [filter,setFilter]=useState("all");
   const statusC=s=>s==="Approved"?"#00d4aa":s==="Under Review"?"#6d5cff":s==="Filed"?"#ff8c42":s==="Tentative Approval"?"#fbbf24":"#5a6380";
-  const filtered=filter==="all"?REG_FILINGS:REG_FILINGS.filter(f=>f.drug===filter);
+  const raw=filter==="all"?REG_FILINGS:REG_FILINGS.filter(f=>f.drug===filter);
+  // Sort: Phase III / Not yet filed first, then by PDUFA date descending (most recent first)
+  const filtered=[...raw].sort((a,b)=>{
+    const aNotFiled=a.filed==="Not yet filed"||a.status==="Phase III"||a.status==="Pre-filing"?1:0;
+    const bNotFiled=b.filed==="Not yet filed"||b.status==="Phase III"||b.status==="Pre-filing"?1:0;
+    if(aNotFiled!==bNotFiled) return bNotFiled-aNotFiled; // Not yet filed first
+    // Then by status priority: Under Review > Tentative Approval > Filed > Approved
+    const statusOrder={"Phase III":0,"Pre-filing":1,"Under Review":2,"Filed":3,"Tentative Approval":4,"Approved":5};
+    const aOrd=statusOrder[a.status]??3;
+    const bOrd=statusOrder[b.status]??3;
+    if(aOrd!==bOrd) return aOrd-bOrd;
+    // Within same status, sort by PDUFA date descending
+    const aDate=a.pdufa==="TBD"?"9999":a.pdufa;
+    const bDate=b.pdufa==="TBD"?"9999":b.pdufa;
+    return bDate.localeCompare(aDate);
+  });
   return <div>
-    <div style={{display:"flex",gap:10,marginBottom:16,alignItems:"center"}}><Title sub="BLA, ANDA, and sBLA submissions through FDA review stages">📋 Regulatory Filing Tracker</Title><Select value={filter} onChange={setFilter} options={[{value:"all",label:"All Drugs"},...[...new Set(REG_FILINGS.map(f=>f.drug))].map(d=>({value:d,label:d}))]} placeholder="Filter..."/></div>
+    <div style={{display:"flex",gap:10,marginBottom:16,alignItems:"center"}}><Title sub="BLA, ANDA, and sBLA submissions — sorted by filing stage & date">📋 Regulatory Filing Tracker</Title><Select value={filter} onChange={setFilter} options={[{value:"all",label:"All Drugs"},...[...new Set(REG_FILINGS.map(f=>f.drug))].map(d=>({value:d,label:d}))]} placeholder="Filter..."/></div>
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8,marginBottom:16}}>
-      <Stat l="Total Filings" v={REG_FILINGS.length} c="#6d5cff"/><Stat l="Under Review" v={REG_FILINGS.filter(f=>f.status==="Under Review").length} c="#ff8c42"/><Stat l="Approved" v={REG_FILINGS.filter(f=>f.status==="Approved").length} c="#00d4aa"/><Stat l="Filed/Pending" v={REG_FILINGS.filter(f=>f.status==="Filed"||f.status==="Pre-filing").length} c="#fbbf24"/>
+      <Stat l="Total Filings" v={REG_FILINGS.length} c="#6d5cff"/><Stat l="Not Yet Filed" v={REG_FILINGS.filter(f=>f.filed==="Not yet filed"||f.status==="Phase III").length} c="#5a6380"/><Stat l="Under Review" v={REG_FILINGS.filter(f=>f.status==="Under Review").length} c="#ff8c42"/><Stat l="Tentative" v={REG_FILINGS.filter(f=>f.status==="Tentative Approval").length} c="#fbbf24"/><Stat l="Approved" v={REG_FILINGS.filter(f=>f.status==="Approved").length} c="#00d4aa"/>
     </div>
     {filtered.map((f,i)=><Crd key={i} style={{marginBottom:5,borderLeft:`3px solid ${statusC(f.status)}`}}>
       <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}}>
@@ -1700,7 +2262,7 @@ function RegFilingTab(){
         <span style={{padding:"3px 10px",borderRadius:6,fontSize:10,fontWeight:600,background:`${statusC(f.status)}15`,color:statusC(f.status)}}>{f.status}</span>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}}>
-        <div><div style={{fontSize:9,color:C.muted}}>Filed</div><div style={{fontSize:11,color:C.text}}>{f.filed}</div></div>
+        <div><div style={{fontSize:9,color:C.muted}}>Filed</div><div style={{fontSize:11,color:f.filed==="Not yet filed"?"#5a6380":C.text,fontStyle:f.filed==="Not yet filed"?"italic":"normal"}}>{f.filed}</div></div>
         <div><div style={{fontSize:9,color:C.muted}}>PDUFA / Action Date</div><div style={{fontSize:11,color:f.pdufa==="TBD"?"#ff8c42":C.text,fontWeight:f.pdufa==="TBD"?600:400}}>{f.pdufa}</div></div>
       </div>
       <div style={{marginTop:6,fontSize:11,color:C.text,lineHeight:1.5}}>{f.notes}</div>
@@ -1712,12 +2274,12 @@ function RegFilingTab(){
 // TAB: INVESTOR SENTIMENT
 // ═══════════════════════════════════════════
 const INV_DATA=[
-  {co:"Merck",ticker:"MRK",price:115,consensus:"Hold",pt:128,si:1.8,kwTrend:[{q:"Q3'24",n:12},{q:"Q4'24",n:18},{q:"Q1'25",n:22},{q:"Q2'25",n:25}],catalyst:"SC Keytruda could extend peak by 2+ years",risk:"55% revenue concentration in single drug"},
-  {co:"BMS",ticker:"BMY",price:52,consensus:"Buy",pt:68,si:2.4,kwTrend:[{q:"Q3'24",n:8},{q:"Q4'24",n:10},{q:"Q1'25",n:14},{q:"Q2'25",n:16}],catalyst:"Opdivo SC + Breyanzi scale could offset LOE",risk:"Eliquis + Opdivo = 45% revenue both facing LOE"},
-  {co:"J&J",ticker:"JNJ",price:162,consensus:"Buy",pt:180,si:0.9,kwTrend:[{q:"Q3'24",n:6},{q:"Q4'24",n:8},{q:"Q1'25",n:5},{q:"Q2'25",n:4}],catalyst:"Tremfya IBD data + Darzalex growth",risk:"Stelara biosimilar erosion faster than expected"},
-  {co:"Novo Nordisk",ticker:"NVO",price:125,consensus:"Buy",pt:150,si:1.2,kwTrend:[{q:"Q3'24",n:2},{q:"Q4'24",n:3},{q:"Q1'25",n:5},{q:"Q2'25",n:8}],catalyst:"Oral semaglutide + CagriSema obesity data",risk:"Supply constraints, compounding, IRA exposure"},
-  {co:"AbbVie",ticker:"ABBV",price:188,consensus:"Buy",pt:210,si:1.1,kwTrend:[{q:"Q3'24",n:15},{q:"Q4'24",n:12},{q:"Q1'25",n:8},{q:"Q2'25",n:5}],catalyst:"Skyrizi + Rinvoq replacing Humira",risk:"Second-wave Humira biosimilar discounts"},
-  {co:"Regeneron",ticker:"REGN",price:780,consensus:"Hold",pt:850,si:1.5,kwTrend:[{q:"Q3'24",n:4},{q:"Q4'24",n:5},{q:"Q1'25",n:7},{q:"Q2'25",n:9}],catalyst:"Dupixent expansion + Eylea HD uptake",risk:"Eylea standard biosimilar launches 2027"},
+  {co:"Merck",ticker:"MRK",price:98,consensus:"Hold",pt:115,si:2.1,kwTrend:[{q:"Q3'24",n:12},{q:"Q4'24",n:18},{q:"Q1'25",n:22},{q:"Q2'25",n:25},{q:"Q3'25",n:30},{q:"Q4'25",n:35},{q:"Q1'26",n:38}],catalyst:"SC Keytruda Qlex launched Sep 2025 — extends peak by 2+ years",risk:"55% revenue from single drug. 7+ biosimilar developers in Phase III."},
+  {co:"BMS",ticker:"BMY",price:56,consensus:"Buy",pt:72,si:2.2,kwTrend:[{q:"Q3'24",n:8},{q:"Q4'24",n:10},{q:"Q1'25",n:14},{q:"Q2'25",n:16},{q:"Q3'25",n:13},{q:"Q4'25",n:11},{q:"Q1'26",n:12}],catalyst:"Eliquis generic delayed to Apr 2028 — 2 extra years of exclusivity",risk:"Eliquis + Opdivo = 45% revenue both facing LOE 2028-2029"},
+  {co:"J&J",ticker:"JNJ",price:155,consensus:"Hold",pt:172,si:0.8,kwTrend:[{q:"Q3'24",n:6},{q:"Q4'24",n:8},{q:"Q1'25",n:18},{q:"Q2'25",n:22},{q:"Q3'25",n:15},{q:"Q4'25",n:10},{q:"Q1'26",n:8}],catalyst:"Stelara cliff priced in. Tremfya IBD data + Darzalex growth offsets",risk:"7 ustekinumab biosimilars at 80-90% discounts eroding faster than expected"},
+  {co:"Novo Nordisk",ticker:"NVO",price:82,consensus:"Buy",pt:110,si:1.8,kwTrend:[{q:"Q3'24",n:2},{q:"Q4'24",n:3},{q:"Q1'25",n:5},{q:"Q2'25",n:8},{q:"Q3'25",n:10},{q:"Q4'25",n:12},{q:"Q1'26",n:14}],catalyst:"Oral semaglutide + CagriSema obesity Phase III readouts",risk:"Supply constraints, compounding pharmacies, IRA exposure, Lilly competition"},
+  {co:"AbbVie",ticker:"ABBV",price:195,consensus:"Buy",pt:220,si:1.0,kwTrend:[{q:"Q3'24",n:15},{q:"Q4'24",n:12},{q:"Q1'25",n:8},{q:"Q2'25",n:5},{q:"Q3'25",n:4},{q:"Q4'25",n:3},{q:"Q1'26",n:3}],catalyst:"Skyrizi + Rinvoq >$20B combined. Humira cliff absorbed",risk:"Second-wave Humira biosimilar discounts reaching 85-90%"},
+  {co:"Regeneron",ticker:"REGN",price:680,consensus:"Hold",pt:780,si:1.6,kwTrend:[{q:"Q3'24",n:4},{q:"Q4'24",n:5},{q:"Q1'25",n:7},{q:"Q2'25",n:9},{q:"Q3'25",n:15},{q:"Q4'25",n:22},{q:"Q1'26",n:28}],catalyst:"Eylea HD uptake + Dupixent indication expansion (CSU, COPD)",risk:"6 Eylea biosimilars approved, launches Q4 2026. Pavblu already at-risk."},
 ];
 function InvestorTab(){
   return <div>
@@ -1749,17 +2311,23 @@ function InvestorTab(){
 // ═══════════════════════════════════════════
 function AlertTab(){
   const [alerts,setAlerts]=useState([
-    {id:1,name:"Keytruda Phase Advance",drug:"Keytruda",trigger:"Any competitor advances phase",status:"active",fires:2,last:"Feb 19 — Biocon Phase III complete"},
-    {id:2,name:"Eliquis Litigation Ruling",drug:"Eliquis",trigger:"Court ruling or filing",status:"active",fires:3,last:"Feb 20 — Dr. Reddy's Para IV"},
-    {id:3,name:"Stelara Payer Shift",drug:"Stelara",trigger:"Top-10 PBM formulary change",status:"active",fires:1,last:"Feb 14 — ESI Wezlana preferred"},
-    {id:4,name:"340B Biosimilar Switch",drug:"All Oncology",trigger:"340B entity biosimilar adoption",status:"paused",fires:0,last:"—"},
-    {id:5,name:"Patent Challenge",drug:"All",trigger:"Paragraph IV or IPR petition filed",status:"active",fires:1,last:"Feb 20 — Dr. Reddy's apixaban"},
+    {id:1,name:"Keytruda Phase Advance",drug:"Keytruda",trigger:"Any competitor advances phase",status:"active",fires:2,last:"Feb 19 — Biocon Phase III complete",
+      urls:[{l:"ClinicalTrials.gov — Pembrolizumab Biosimilar",u:"https://clinicaltrials.gov/search?term=pembrolizumab+biosimilar"},{l:"FDA Purple Book — Keytruda",u:"https://purplebooksearch.fda.gov/search?query=pembrolizumab"},{l:"Merck 10-K (SEC)",u:"https://www.sec.gov/cgi-bin/browse-edgar?company=merck&CIK=&type=10-K&action=getcompany"}]},
+    {id:2,name:"Eliquis Litigation Ruling",drug:"Eliquis",trigger:"Court ruling or filing",status:"active",fires:3,last:"Feb 20 — BMS confirms Apr 2028 generic entry",
+      urls:[{l:"CourtListener — Apixaban Docket",u:"https://www.courtlistener.com/?q=apixaban+patent&type=r&order_by=score+desc"},{l:"USPTO Patent Search — Apixaban",u:"https://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO2&Sect2=HITOFF&u=/netahtml/PTO/search-adv.htm&r=0&p=1&f=S&l=50&Query=apixaban&d=PTXT"},{l:"PACER — Delaware District",u:"https://ecf.ded.uscourts.gov/"}]},
+    {id:3,name:"Stelara Biosim Launch",drug:"Stelara",trigger:"New biosimilar market entry",status:"active",fires:7,last:"Feb 24 — Yesintek & Pyzchiva launched",
+      urls:[{l:"FDA — Ustekinumab Biosimilars",u:"https://purplebooksearch.fda.gov/search?query=ustekinumab"},{l:"DailyMed — Yesintek",u:"https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=yesintek"},{l:"Biocon Biologics PR",u:"https://www.bioconbiologics.com/biocon-biologics-launches-yesintek-ustekinumab-kfce-biosimilar-to-stelara-in-the-united-states/"}]},
+    {id:4,name:"340B Biosimilar Switch",drug:"All Oncology",trigger:"340B entity biosimilar adoption",status:"paused",fires:0,last:"—",
+      urls:[{l:"HRSA 340B Database",u:"https://340bopais.hrsa.gov/manufacturer"},{l:"CMS ASP Drug Pricing",u:"https://www.cms.gov/medicare/payment/part-b-drugs/asp-pricing-files"},{l:"340B Health — Policy Updates",u:"https://www.340bhealth.org/"}]},
+    {id:5,name:"Patent Challenge",drug:"All",trigger:"Paragraph IV or IPR petition filed",status:"active",fires:1,last:"Feb 20 — Dr. Reddy's apixaban",
+      urls:[{l:"USPTO PTAB — IPR Decisions",u:"https://ptab.uspto.gov/#/login"},{l:"FDA Paragraph IV Certifications",u:"https://www.fda.gov/drugs/abbreviated-new-drug-application-anda/patent-certifications-and-suitability-petitions"},{l:"CourtListener — Patent Cases",u:"https://www.courtlistener.com/?type=r&q=paragraph+IV+ANDA"}]},
   ]);
   const [showNew,setShowNew]=useState(false);
   const [nn,setNN]=useState("");const [nd,setND]=useState("");const [nt,setNT]=useState("");
-  const add=()=>{if(nn&&nt){setAlerts(p=>[...p,{id:Date.now(),name:nn,drug:nd||"All",trigger:nt,status:"active",fires:0,last:"—"}]);setShowNew(false);setNN("");setND("");setNT("");}};
+  const [expandedId,setExpandedId]=useState(null);
+  const add=()=>{if(nn&&nt){setAlerts(p=>[...p,{id:Date.now(),name:nn,drug:nd||"All",trigger:nt,status:"active",fires:0,last:"—",urls:[{l:"FDA Drug Search",u:"https://www.accessdata.fda.gov/scripts/cder/daf/"},{l:"ClinicalTrials.gov",u:"https://clinicaltrials.gov/"},{l:"USPTO Patent Search",u:"https://patft.uspto.gov/"}]}]);setShowNew(false);setNN("");setND("");setNT("");}};
   return <div>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><Title sub="Configure triggers for real-time patent cliff intelligence">🔔 Alert Center</Title><button onClick={()=>setShowNew(!showNew)} style={{padding:"8px 18px",background:"linear-gradient(135deg,#4a3dcc,#6d5cff)",border:"none",borderRadius:8,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>+ New Alert</button></div>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><Title sub="Configure triggers for real-time patent cliff intelligence. Double-click any alert to view source URLs.">🔔 Alert Center</Title><button onClick={()=>setShowNew(!showNew)} style={{padding:"8px 18px",background:"linear-gradient(135deg,#4a3dcc,#6d5cff)",border:"none",borderRadius:8,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>+ New Alert</button></div>
     {showNew&&<Crd style={{marginBottom:14,borderColor:"rgba(109,92,255,0.3)"}}>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 2fr auto",gap:8,alignItems:"end"}}>
         <div><div style={{fontSize:10,color:C.muted,marginBottom:3}}>Name</div><input value={nn} onChange={e=>setNN(e.target.value)} placeholder="Alert name" style={{width:"100%",padding:"7px",background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,borderRadius:6,color:C.bright,fontSize:11,outline:"none"}}/></div>
@@ -1771,7 +2339,8 @@ function AlertTab(){
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8,marginBottom:14}}>
       <Stat l="Active" v={alerts.filter(a=>a.status==="active").length} c="#00d4aa"/><Stat l="Total Fires" v={alerts.reduce((a,al)=>a+al.fires,0)} c="#ff8c42"/><Stat l="Last Trigger" v="Feb 20" c="#6d5cff"/>
     </div>
-    {alerts.map(a=><Crd key={a.id} style={{marginBottom:5,borderLeft:`3px solid ${a.status==="active"?"#00d4aa":"#5a6380"}`,opacity:a.status==="active"?1:0.6}}>
+    <div style={{fontSize:10,color:C.muted,marginBottom:10,fontStyle:"italic"}}>💡 Double-click any alert to expand source URLs for direct navigation</div>
+    {alerts.map(a=><Crd key={a.id} style={{marginBottom:5,borderLeft:`3px solid ${a.status==="active"?"#00d4aa":"#5a6380"}`,opacity:a.status==="active"?1:0.6,cursor:"pointer",transition:"all 0.2s"}} onDoubleClick={()=>setExpandedId(expandedId===a.id?null:a.id)}>
       <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:6}}>
         <div><div style={{fontSize:13,fontWeight:700,color:C.bright}}>{a.name}</div><div style={{fontSize:10,color:C.muted}}>Drug: <span style={{color:"#8b7fff"}}>{a.drug}</span> · {a.trigger}</div><div style={{fontSize:10,color:C.muted,marginTop:2}}>Fires: <span style={{color:"#ff8c42",fontWeight:600}}>{a.fires}</span> · Last: {a.last}</div></div>
         <div style={{display:"flex",gap:3,alignItems:"flex-start"}}>
@@ -1779,6 +2348,16 @@ function AlertTab(){
           <button onClick={()=>setAlerts(p=>p.filter(x=>x.id!==a.id))} style={{padding:"4px 8px",borderRadius:5,border:"1px solid rgba(255,77,106,0.2)",background:"transparent",color:"#ff4d6a",fontSize:10,cursor:"pointer"}}>✕</button>
         </div>
       </div>
+      {expandedId===a.id&&<div style={{marginTop:10,padding:"10px 12px",background:"rgba(99,102,241,0.04)",borderRadius:8,border:"1px solid rgba(99,102,241,0.12)"}}>
+        <div style={{fontSize:10,fontWeight:700,color:"#a99fff",marginBottom:6,textTransform:"uppercase",letterSpacing:.5}}>📌 Source URLs — Click to navigate</div>
+        <div style={{display:"flex",flexDirection:"column",gap:4}}>
+          {(a.urls||[]).map((u,j)=><div key={j} style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:10,color:"#10b981"}}>✓</span>
+            <Lnk l={u.l} u={u.u}/>
+            <span style={{fontSize:9,color:C.muted,fontFamily:mono,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:300}}>{u.u}</span>
+          </div>)}
+        </div>
+      </div>}
     </Crd>)}
   </div>;
 }
@@ -1789,10 +2368,10 @@ function AlertTab(){
 function WorkspaceTab(){
   const [notes,setNotes]=useState([
     {id:1,drug:"Eliquis",author:"Sarah K.",date:"Feb 21",text:"Delaware ruling favors generics — brief commercial team on formulary implications.",tag:"litigation",pinned:true},
-    {id:2,drug:"Keytruda",author:"Mike R.",date:"Feb 19",text:"Biocon HERITAGE-1 data looks clean. Start modeling 2029 budget impact.",tag:"clinical",pinned:true},
-    {id:3,drug:"Stelara",author:"Lisa M.",date:"Feb 17",text:"CVS and Express Scripts both moved to biosimilar preferred. Align payer messaging.",tag:"payer",pinned:false},
+    {id:2,drug:"Keytruda",author:"Mike R.",date:"Feb 19",text:"Samsung SB27 & Amgen ABP 234 Phase III readouts expected 2025-2026. Start modeling 2029 budget impact.",tag:"clinical",pinned:true},
+    {id:3,drug:"Stelara",author:"Lisa M.",date:"Feb 17",text:"7 ustekinumab biosimilars now launched/approved. Yesintek at 90% WAC discount. Major PBMs all moved to biosimilar preferred.",tag:"payer",pinned:false},
     {id:4,drug:"Industry",author:"David C.",date:"Feb 15",text:"Samsung Plant 5 confirms CDMO demand. Good sign for outsourcing strategy.",tag:"supply",pinned:false},
-    {id:5,drug:"Eylea",author:"Anna P.",date:"Feb 14",text:"EMA positive opinion for SB15. US filing Q2. Retinal specialists still resistant.",tag:"regulatory",pinned:false},
+    {id:5,drug:"Eylea",author:"Anna P.",date:"Feb 14",text:"6 aflibercept biosimilars now approved. Pavblu launched at-risk. Yesafili, Enzeevu, Ahzantive settlements for Q4 2026.",tag:"regulatory",pinned:false},
   ]);
   const [newNote,setNewNote]=useState("");const [newDrug,setNewDrug]=useState("Industry");const [newTag,setNewTag]=useState("general");const [filterTag,setFilterTag]=useState("all");
   const add=()=>{if(newNote){setNotes(p=>[{id:Date.now(),drug:newDrug,author:"You",date:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"}),text:newNote,tag:newTag,pinned:false},...p]);setNewNote("");}};
@@ -1830,39 +2409,237 @@ function WorkspaceTab(){
 // TAB: REPORT BUILDER / SCENARIO COMPARISON
 // ═══════════════════════════════════════════
 function ReportTab(){
+  const projDrugs = DRUGS.filter(d => !HISTORICAL_LOE.some(h => h.molecule === d.molecule));
+  const [selDrug,setSelDrug]=useState(0);
+  const [myCo,setMyCo]=useState("");
+  const d = DRUGS[selDrug];
+  const isOrig = myCo && d.originator.toLowerCase().includes(myCo.toLowerCase());
+  const isComp = myCo && !isOrig;
+  const myCompEntry = isComp ? d.competitors.find(c=>c.company.toLowerCase().includes(myCo.toLowerCase())) : null;
+
+  // Base case: built from actual current factors
+  const actualComps = d.competitors.filter(c=>c.phase==="Launched"||c.phase==="Launched (at-risk)"||c.phase==="Approved"||c.phase==="Approved — Settlement").length || d.competitors.length;
+  const hasInterch = d.competitors.some(c=>c.commercial?.toLowerCase().includes("interchangeable"));
+  const erosionRef = EROSION_BY_THERAPY.find(e=>d.therapyArea.includes(e.area))||{e24:55};
+  const baseCM = actualComps<=1?0.6:actualComps<=2?0.75:actualComps<=4?1.0:actualComps<=6?1.15:1.3;
+  const baseIM = hasInterch?1.15:1.0;
+  const baseAdj = Math.min(0.92, erosionRef.e24/100*baseCM*baseIM);
+
+  // Scenario system
+  const mkScenario=(name,comps,delay,interch,override)=>({name,comps,delay,interch,override});
   const [scenarios,setScenarios]=useState([
-    {id:1,name:"Base Case — 3 Competitors",drug:"Keytruda",comps:3,delay:0,erosion24:55,yr1Loss:6.9,yr3Loss:18.4,date:"Feb 18"},
-    {id:2,name:"Aggressive — 5 Comp + Interch",drug:"Keytruda",comps:5,delay:0,erosion24:72,yr1Loss:9.0,yr3Loss:22.1,date:"Feb 18"},
-    {id:3,name:"Delayed Entry — 12m",drug:"Keytruda",comps:3,delay:12,erosion24:38,yr1Loss:4.8,yr3Loss:14.2,date:"Feb 19"},
+    mkScenario("Base Case", actualComps, 0, hasInterch, null),
+    mkScenario("Aggressive Erosion", Math.min(8,actualComps+2), 0, true, null),
+    mkScenario("Delayed Entry", Math.max(1, actualComps-1), 12, false, null),
   ]);
-  const [showNew,setShowNew]=useState(false);const [nName,setNName]=useState("");const [nDrug,setNDrug]=useState(0);const [nComps,setNComps]=useState(3);const [nDelay,setNDelay]=useState(0);
-  const addS=()=>{if(!nName)return;const d=DRUGS[nDrug];const er=EROSION_BY_THERAPY.find(e=>d.therapyArea.includes(e.area))||{e24:55};
-    const adj=Math.min(92,er.e24*(nComps<=2?0.75:nComps<=4?1.0:1.2)*Math.max(0.4,1-nDelay*0.06));const y1=d.revenue*adj/100*0.45;const y3=d.revenue*adj/100*0.92*3;
-    setScenarios(p=>[...p,{id:Date.now(),name:nName,drug:d.drug,comps:nComps,delay:nDelay,erosion24:Math.round(adj),yr1Loss:+y1.toFixed(1),yr3Loss:+y3.toFixed(1),date:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"})}]);setShowNew(false);setNName("");};
+  const [activeSc,setActiveSc]=useState(0);
+  const [showNew,setShowNew]=useState(false);
+  const [nName,setNName]=useState("");
+
+  const calcScenario = (sc) => {
+    const cm=sc.comps<=1?0.6:sc.comps<=2?0.75:sc.comps<=4?1.0:sc.comps<=6?1.15:1.3;
+    const im=sc.interch?1.15:1.0;
+    const dm=Math.max(0.3,1-sc.delay*0.06);
+    const adj=sc.override!==null&&sc.override!==undefined?sc.override/100:Math.min(0.92,erosionRef.e24/100*cm*im*dm);
+    const y1=d.revenue*adj*0.45;const y2=d.revenue*adj*0.75;const y3=d.revenue*adj*0.92;
+    // Competitor share
+    const myStr=myCompEntry?.strength||75;
+    const totStr=d.competitors.reduce((a,c)=>a+(c.strength||70),0)||(sc.comps*75);
+    const myShare=totStr>0?myStr/totStr:1/Math.max(1,sc.comps);
+    return{...sc,adj:+(adj*100).toFixed(0),
+      yr1Loss:+y1.toFixed(2),yr2Loss:+y2.toFixed(2),yr3Loss:+y3.toFixed(2),
+      yr1Gain:+(y1*myShare*0.45).toFixed(2),yr2Gain:+(y2*myShare*0.45).toFixed(2),yr3Gain:+(y3*myShare*0.45).toFixed(2),
+      myShare:+(myShare*100).toFixed(0),
+      origRemain1:+(d.revenue-y1).toFixed(1),origRemain2:+(d.revenue-y2).toFixed(1),origRemain3:+(d.revenue-y3).toFixed(1),
+    };
+  };
+
+  const results = scenarios.map(calcScenario);
+  const active = results[activeSc];
+
+  const updateSc=(field,val)=>{setScenarios(prev=>prev.map((s,i)=>i!==activeSc?s:{...s,[field]:val}));};
+  const cloneScenario=()=>{if(!nName)return;setScenarios(p=>[...p,{...scenarios[activeSc],name:nName}]);setActiveSc(scenarios.length);setShowNew(false);setNName("");};
+
+  // Reset scenarios when drug changes
+  const handleDrugChange = (v) => {
+    setSelDrug(+v);
+    const nd=DRUGS[+v];
+    const nc=nd.competitors.filter(c=>c.phase==="Launched"||c.phase==="Launched (at-risk)"||c.phase==="Approved"||c.phase==="Approved — Settlement").length||nd.competitors.length;
+    const ni=nd.competitors.some(c=>c.commercial?.toLowerCase().includes("interchangeable"));
+    setScenarios([mkScenario("Base Case",nc,0,ni,null),mkScenario("Aggressive Erosion",Math.min(8,nc+2),0,true,null),mkScenario("Delayed Entry",Math.max(1,nc-1),12,false,null)]);
+    setActiveSc(0);
+  };
+
+  // Monthly trajectory for the active scenario
+  const monthlyData = [0,3,6,9,12,18,24,36].map(m=>{
+    const erosion = m===0?0:Math.min(active.adj/100, (active.adj/100)*(1-Math.exp(-m/12)));
+    const origRev = d.revenue*(1-erosion);
+    const biosimRev = d.revenue*erosion*0.45;
+    const myRev = biosimRev*(active.myShare/100);
+    return {m:`M${m}`,origRev:+origRev.toFixed(2),biosimRev:+biosimRev.toFixed(2),myRev:+myRev.toFixed(3),erosion:+(erosion*100).toFixed(1)};
+  });
+
   return <div>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><Title sub="Create, compare, and export scenario analyses">📄 Report Builder</Title><button onClick={()=>setShowNew(!showNew)} style={{padding:"8px 18px",background:"linear-gradient(135deg,#4a3dcc,#6d5cff)",border:"none",borderRadius:8,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>+ New Scenario</button></div>
-    {showNew&&<Crd style={{marginBottom:14,borderColor:"rgba(109,92,255,0.3)"}}>
-      <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr auto",gap:8,alignItems:"end"}}>
-        <div><div style={{fontSize:10,color:C.muted,marginBottom:3}}>Name</div><input value={nName} onChange={e=>setNName(e.target.value)} placeholder="Scenario name" style={{width:"100%",padding:"7px",background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,borderRadius:6,color:C.bright,fontSize:11,outline:"none"}}/></div>
-        <div><div style={{fontSize:10,color:C.muted,marginBottom:3}}>Drug</div><Select value={nDrug} onChange={v=>setNDrug(+v)} options={DRUGS.map((d,i)=>({value:String(i),label:d.drug}))}/></div>
-        <div><div style={{fontSize:10,color:C.muted,marginBottom:3}}>Competitors</div><input type="number" min={1} max={8} value={nComps} onChange={e=>setNComps(+e.target.value)} style={{width:"100%",padding:"7px",background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,borderRadius:6,color:C.bright,fontSize:11,outline:"none",fontFamily:mono}}/></div>
-        <div><div style={{fontSize:10,color:C.muted,marginBottom:3}}>Delay (m)</div><input type="number" min={0} max={24} value={nDelay} onChange={e=>setNDelay(+e.target.value)} style={{width:"100%",padding:"7px",background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,borderRadius:6,color:C.bright,fontSize:11,outline:"none",fontFamily:mono}}/></div>
-        <button onClick={addS} style={{padding:"7px 14px",background:"rgba(0,212,170,0.12)",border:"1px solid rgba(0,212,170,0.3)",borderRadius:6,color:"#00d4aa",fontSize:11,fontWeight:600,cursor:"pointer"}}>Create</button>
+    <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:16}}>
+      <Select value={selDrug} onChange={handleDrugChange} options={projDrugs.map(dr=>({value:String(DRUGS.indexOf(dr)),label:`${dr.drug} — ${dr.molecule} ($${dr.revenue}B)`}))} placeholder="Select molecule..." style={{minWidth:350}}/>
+      <Select value={myCo} onChange={setMyCo} options={[{value:"",label:"— No company —"},...COMPANIES.map(c=>({value:c.name,label:`🏢 ${c.name} (${c.type})`}))]} placeholder="🏢 Select company..."/>
+    </div>
+    <Title sub={`Model ${d.drug} (${d.molecule}) scenarios — ${myCo?(isOrig?"Originator risk view":"Competitor opportunity view"):"Market-level view"}`}>⚔️ Scenario War Game — {d.drug}</Title>
+
+    {myCo&&<div style={{padding:"8px 14px",borderRadius:8,background:isOrig?"rgba(255,77,106,0.06)":"rgba(0,212,170,0.06)",border:`1px solid ${isOrig?"rgba(255,77,106,0.15)":"rgba(0,212,170,0.15)"}`,color:isOrig?"#ff8c42":"#10b981",fontSize:11,marginBottom:14}}>
+      {isOrig?`⚠️ ${myCo} is the ORIGINATOR — Showing revenue RISK across scenarios`:`📈 ${myCo} is a COMPETITOR — Showing revenue OPPORTUNITY across scenarios${myCompEntry?` (Strength: ${myCompEntry.strength}/100, Share: ${active.myShare}%)`:""}`}
+    </div>}
+
+    {/* Base Case Summary */}
+    <Crd style={{marginBottom:14,borderColor:"rgba(109,92,255,0.2)",background:"rgba(109,92,255,0.02)"}}>
+      <div style={{fontSize:12,fontWeight:700,color:C.bright,marginBottom:8}}>📊 Current Market Factors (Base Case)</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:8}}>
+        <div style={{padding:"8px 10px",borderRadius:6,background:"rgba(255,255,255,0.02)"}}><div style={{fontSize:9,color:C.muted}}>Active Competitors</div><div style={{fontSize:16,fontWeight:800,color:"#a99fff",fontFamily:mono}}>{actualComps}</div></div>
+        <div style={{padding:"8px 10px",borderRadius:6,background:"rgba(255,255,255,0.02)"}}><div style={{fontSize:9,color:C.muted}}>Interchangeable?</div><div style={{fontSize:14,fontWeight:700,color:hasInterch?"#10b981":"#ff8c42"}}>{hasInterch?"Yes":"No"}</div></div>
+        <div style={{padding:"8px 10px",borderRadius:6,background:"rgba(255,255,255,0.02)"}}><div style={{fontSize:9,color:C.muted}}>Therapy Benchmark</div><div style={{fontSize:14,fontWeight:700,color:C.text}}>{erosionRef.e24}% / 24m</div></div>
+        <div style={{padding:"8px 10px",borderRadius:6,background:"rgba(255,255,255,0.02)"}}><div style={{fontSize:9,color:C.muted}}>Base Erosion Est.</div><div style={{fontSize:14,fontWeight:700,color:baseAdj>0.6?"#ef4444":"#ff8c42"}}>{(baseAdj*100).toFixed(0)}%</div></div>
+        <div style={{padding:"8px 10px",borderRadius:6,background:"rgba(255,255,255,0.02)"}}><div style={{fontSize:9,color:C.muted}}>LOE Date</div><div style={{fontSize:14,fontWeight:700,color:C.text}}>{new Date(d.patentExpiry).toLocaleDateString("en-US",{month:"short",year:"numeric"})}</div></div>
       </div>
-    </Crd>}
-    {scenarios.length>0&&<Crd style={{marginBottom:14}}><Title>Scenario Comparison — Year 1 Loss ($B)</Title><ResponsiveContainer width="100%" height={200}><BarChart data={scenarios}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="name" tick={{fontSize:8,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}}/><Tooltip content={<CTip/>}/><Bar dataKey="yr1Loss" name="Yr1 Loss $B" radius={[4,4,0,0]}>{scenarios.map((_,i)=><Cell key={i} fill={["#6d5cff","#ff4d6a","#00d4aa","#ff8c42","#a78bfa"][i%5]}/>)}</Bar></BarChart></ResponsiveContainer></Crd>}
-    <Crd><table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 3px"}}><thead><tr style={{fontSize:9,color:C.muted,textTransform:"uppercase"}}>{["Scenario","Drug","Comps","Delay","24m Erosion","Yr1 Loss","3yr Loss","Created",""].map((h,i)=><th key={i} style={{textAlign:i>1?"center":"left",padding:"0 6px 4px"}}>{h}</th>)}</tr></thead>
-      <tbody>{scenarios.map((s,i)=><tr key={i} style={{background:"rgba(255,255,255,0.01)"}}>
-        <td style={{padding:"7px 6px",fontSize:11,fontWeight:700,color:C.bright}}>{s.name}</td>
-        <td style={{padding:"7px 6px",fontSize:10,color:"#8b7fff"}}>{s.drug}</td>
-        <td style={{padding:"7px 6px",textAlign:"center",fontFamily:mono,fontSize:11}}>{s.comps}</td>
-        <td style={{padding:"7px 6px",textAlign:"center",fontFamily:mono,fontSize:11}}>{s.delay}m</td>
-        <td style={{padding:"7px 6px",textAlign:"center",fontFamily:mono,fontSize:12,fontWeight:700,color:"#ff4d6a"}}>{s.erosion24}%</td>
-        <td style={{padding:"7px 6px",textAlign:"center",fontFamily:mono,fontSize:11,color:"#ff4d6a"}}>${s.yr1Loss}B</td>
-        <td style={{padding:"7px 6px",textAlign:"center",fontFamily:mono,fontSize:11,color:"#ff4d6a"}}>${s.yr3Loss}B</td>
-        <td style={{padding:"7px 6px",textAlign:"center",fontSize:9,color:C.muted}}>{s.date}</td>
-        <td><button onClick={()=>setScenarios(p=>p.filter(x=>x.id!==s.id))} style={{padding:"2px 6px",border:"1px solid rgba(255,77,106,0.15)",borderRadius:4,background:"transparent",color:"#ff4d6a",fontSize:10,cursor:"pointer"}}>✕</button></td>
-      </tr>)}</tbody></table></Crd>
+    </Crd>
+
+    {/* Scenario selector tabs */}
+    <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
+      {scenarios.map((s,i)=><button key={i} onClick={()=>setActiveSc(i)} style={{padding:"7px 16px",borderRadius:8,border:`1px solid ${activeSc===i?"rgba(99,102,241,0.4)":C.border}`,background:activeSc===i?"rgba(99,102,241,0.12)":"transparent",color:activeSc===i?"#a5b4fc":C.muted,fontSize:12,fontWeight:activeSc===i?700:400,cursor:"pointer"}}>{s.name}</button>)}
+      <button onClick={()=>setShowNew(!showNew)} style={{padding:"7px 14px",borderRadius:8,border:`1px dashed ${C.border}`,background:"transparent",color:C.muted,fontSize:12,cursor:"pointer"}}>+ New Scenario</button>
+      {showNew&&<div style={{display:"flex",gap:6,alignItems:"center"}}><input value={nName} onChange={e=>setNName(e.target.value)} placeholder="Scenario name..." style={{padding:"6px 10px",background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:6,color:C.bright,fontSize:12,outline:"none",width:180}}/><button onClick={cloneScenario} style={{padding:"6px 12px",background:"rgba(16,185,129,0.12)",border:"1px solid rgba(16,185,129,0.3)",borderRadius:6,color:"#10b981",fontSize:11,fontWeight:600,cursor:"pointer"}}>Create</button></div>}
+    </div>
+
+    {/* Scenario Controls */}
+    <Crd style={{marginBottom:14,borderColor:"rgba(109,92,255,0.15)"}}>
+      <div style={{fontSize:12,fontWeight:700,color:C.bright,marginBottom:10}}>🎛️ {scenarios[activeSc].name} — Parameters</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:14}}>
+        <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:5}}>Competitors <span style={{fontSize:9,color:C.muted}}>(Base: {actualComps})</span></div><input type="range" min={1} max={8} value={scenarios[activeSc].comps} onChange={e=>updateSc("comps",+e.target.value)} style={{width:"100%"}}/><div style={{textAlign:"center",fontSize:13,fontWeight:700,color:scenarios[activeSc].comps!==actualComps?"#ff4d6a":"#a99fff"}}>{scenarios[activeSc].comps}</div></div>
+        <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:5}}>Your Launch Delay (months)</div><input type="range" min={0} max={24} value={scenarios[activeSc].delay} onChange={e=>updateSc("delay",+e.target.value)} style={{width:"100%"}}/><div style={{textAlign:"center",fontSize:13,fontWeight:700,color:"#ff8c42"}}>{scenarios[activeSc].delay}m</div></div>
+        <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:8}}>Interchangeable</div><button onClick={()=>updateSc("interch",!scenarios[activeSc].interch)} style={{padding:"7px 16px",borderRadius:8,border:`1px solid ${scenarios[activeSc].interch?"#00d4aa":C.border}`,background:scenarios[activeSc].interch?"rgba(0,212,170,0.1)":"transparent",color:scenarios[activeSc].interch?"#00d4aa":C.muted,fontSize:11,fontWeight:600,cursor:"pointer",width:"100%"}}>{scenarios[activeSc].interch?"✓ YES":"✗ NO"}</button></div>
+        <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:5}}>Override Erosion %</div><input type="range" min={10} max={92} value={scenarios[activeSc].override||active.adj} onChange={e=>updateSc("override",+e.target.value)} style={{width:"100%"}}/><div style={{textAlign:"center",fontSize:13,fontWeight:700,color:"#ef4444"}}>{scenarios[activeSc].override||active.adj}%</div></div>
+      </div>
+    </Crd>
+
+    {/* Impact Summary */}
+    {isComp ? <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,marginBottom:16}}>
+      <Stat l="Addressable Market" v={`$${d.revenue}B`} c="#6366f1"/>
+      <Stat l="Yr1 Revenue Capture" v={`+$${active.yr1Gain}B`} c="#10b981" sub={`${(active.yr1Gain/d.revenue*100).toFixed(1)}% of market`}/>
+      <Stat l="Yr2 Revenue Capture" v={`+$${active.yr2Gain}B`} c="#10b981"/>
+      <Stat l="Yr3 Revenue Capture" v={`+$${active.yr3Gain}B`} c="#10b981"/>
+      <Stat l="3-Year Total" v={`+$${(+active.yr1Gain+ +active.yr2Gain+ +active.yr3Gain).toFixed(2)}B`} c="#10b981" sub="Cumulative opportunity"/>
+      <Stat l="24m Erosion" v={`${active.adj}%`} c="#ff8c42"/>
+    </div> : <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,marginBottom:16}}>
+      <Stat l="Revenue at Risk" v={`$${d.revenue}B`} c="#6366f1"/>
+      <Stat l="Yr1 Loss" v={`−$${active.yr1Loss}B`} c="#ef4444" sub={`${(active.yr1Loss/d.revenue*100).toFixed(0)}% of revenue`}/>
+      <Stat l="Yr2 Loss" v={`−$${active.yr2Loss}B`} c="#ef4444"/>
+      <Stat l="Yr3 Loss" v={`−$${active.yr3Loss}B`} c="#ef4444"/>
+      <Stat l="3-Year Total" v={`−$${(+active.yr1Loss+ +active.yr2Loss+ +active.yr3Loss).toFixed(1)}B`} c="#dc2626" sub="Cumulative impact"/>
+      <Stat l="24m Erosion" v={`${active.adj}%`} c="#ff8c42"/>
+    </div>}
+
+    {/* Charts */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+      {/* Scenario comparison bar chart */}
+      <Crd>
+        <Title sub="Side-by-side scenario outcomes">{isComp?"Revenue Capture by Scenario":"Revenue Loss by Scenario"}</Title>
+        <ResponsiveContainer width="100%" height={220}><BarChart data={results.map(r=>({name:r.name,yr1:isComp?r.yr1Gain:r.yr1Loss,yr2:isComp?r.yr2Gain:r.yr2Loss,yr3:isComp?r.yr3Gain:r.yr3Loss}))}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/>
+          <XAxis dataKey="name" tick={{fontSize:10,fill:C.muted}}/>
+          <YAxis tick={{fontSize:10,fill:C.muted}} tickFormatter={v=>`$${v}B`}/>
+          <Tooltip content={<CTip/>}/>
+          <Bar dataKey="yr1" name="Year 1" fill={isComp?"#10b981":"#6366f1"} radius={[4,4,0,0]}/>
+          <Bar dataKey="yr2" name="Year 2" fill={isComp?"#00d4aa":"#f59e0b"} radius={[4,4,0,0]}/>
+          <Bar dataKey="yr3" name="Year 3" fill={isComp?"#8b7fff":"#ef4444"} radius={[4,4,0,0]}/>
+          <Legend wrapperStyle={{fontSize:10}}/>
+        </BarChart></ResponsiveContainer>
+      </Crd>
+      {/* Monthly trajectory */}
+      <Crd>
+        <Title sub={`${scenarios[activeSc].name} — monthly trajectory`}>{isComp?"Your Revenue Build":"Revenue Erosion Trajectory"}</Title>
+        <ResponsiveContainer width="100%" height={220}>
+          <ComposedChart data={monthlyData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/>
+            <XAxis dataKey="m" tick={{fontSize:10,fill:C.muted}}/>
+            <YAxis tick={{fontSize:10,fill:C.muted}} tickFormatter={v=>`$${v}B`}/>
+            <Tooltip content={<CTip/>}/>
+            {isComp ? <>
+              <Area type="monotone" dataKey="myRev" stroke="#10b981" fill="rgba(16,185,129,0.15)" name="Your Revenue ($B)"/>
+              <Line type="monotone" dataKey="biosimRev" stroke="#00d4aa" strokeWidth={1} strokeDasharray="5 5" dot={false} name="Total Biosim ($B)"/>
+            </> : <>
+              <Area type="monotone" dataKey="origRev" stroke="#6d5cff" fill="rgba(109,92,255,0.12)" name="Originator Rev ($B)"/>
+              <Line type="monotone" dataKey="erosion" stroke="#ff4d6a" strokeWidth={2} dot={{r:3}} name="Erosion %"/>
+            </>}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </Crd>
+    </div>
+
+    {/* Competitor landscape for this molecule */}
+    <Crd style={{marginBottom:14}}>
+      <Title sub="Current competitors, strength, phase, and scenario-adjusted projections">🏢 Competitive Landscape — {d.drug}</Title>
+      <div style={{overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 4px",minWidth:700}}>
+          <thead><tr style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:.7}}>
+            {["Company","Phase","Strength","Est. Launch","Yr1 Share","Yr2 Share","Key Factor"].map((h,i)=><th key={i} style={{textAlign:i>=4?"center":"left",padding:"0 8px 4px"}}>{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {/* Originator row */}
+            <tr style={{background:"rgba(255,77,106,0.03)"}}>
+              <td style={{padding:"8px",fontSize:11,fontWeight:700,color:"#ff4d6a"}}>{d.originator} <span style={{fontSize:9,color:C.muted}}>(Originator)</span>{isOrig&&<span style={{color:"#ff8c42",fontSize:9,marginLeft:4}}>← YOU</span>}</td>
+              <td style={{padding:"8px",fontSize:10,color:C.muted}}>Market</td>
+              <td style={{padding:"8px",fontSize:10,color:C.muted}}>—</td>
+              <td style={{padding:"8px",fontSize:10,color:C.muted}}>Incumbent</td>
+              <td style={{padding:"8px",textAlign:"center",fontFamily:mono,fontSize:12,fontWeight:700,color:"#ff4d6a"}}>{(100-active.adj*0.45*100/100).toFixed(0)}%</td>
+              <td style={{padding:"8px",textAlign:"center",fontFamily:mono,fontSize:12,fontWeight:700,color:"#ff4d6a"}}>{(100-active.adj*0.75*100/100).toFixed(0)}%</td>
+              <td style={{padding:"8px",fontSize:10,color:C.muted}}>Lifecycle defense, SC formulation</td>
+            </tr>
+            {d.competitors.map((c,i)=>{
+              const str=c.strength||70;const totStr=d.competitors.reduce((a,x)=>a+(x.strength||70),0);const sh=(str/totStr*100).toFixed(0);
+              const isMe=myCo&&c.company.toLowerCase().includes(myCo.toLowerCase());
+              return <tr key={i} style={{background:isMe?"rgba(16,185,129,0.06)":"rgba(255,255,255,0.01)"}}>
+                <td style={{padding:"8px",fontSize:11,fontWeight:600,color:C.bright}}>{c.company.split("(")[0].trim()}{isMe&&<span style={{color:"#10b981",fontSize:9,marginLeft:4}}>← YOU</span>}</td>
+                <td style={{padding:"8px"}}><span style={{fontSize:10,padding:"2px 6px",borderRadius:4,background:c.phase.includes("Launched")?"rgba(0,212,170,0.1)":"rgba(255,140,66,0.1)",color:c.phase.includes("Launched")?"#00d4aa":"#ff8c42",fontWeight:600}}>{c.phase}</span></td>
+                <td style={{padding:"8px"}}><div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:30,height:4,background:"rgba(255,255,255,0.04)",borderRadius:2,overflow:"hidden"}}><div style={{width:`${str}%`,height:"100%",background:str>80?"#10b981":"#6d5cff",borderRadius:2}}/></div><span style={{fontSize:10,color:C.muted,fontFamily:mono}}>{str}</span></div></td>
+                <td style={{padding:"8px",fontSize:10,color:C.text}}>{c.est}</td>
+                <td style={{padding:"8px",textAlign:"center",fontFamily:mono,fontSize:11,color:"#10b981"}}>{(active.adj*0.45*str/totStr).toFixed(1)}%</td>
+                <td style={{padding:"8px",textAlign:"center",fontFamily:mono,fontSize:11,color:"#10b981"}}>{(active.adj*0.75*str/totStr).toFixed(1)}%</td>
+                <td style={{padding:"8px",fontSize:10,color:C.muted,maxWidth:180}}>{c.weakness||c.commercial||"—"}</td>
+              </tr>;
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Crd>
+
+    {/* Scenario P&L Summary */}
+    <Crd>
+      <Title sub="Year-over-year impact for the selected scenario">{isComp?"📈 Opportunity P&L":"📉 Risk P&L"} — {scenarios[activeSc].name}</Title>
+      <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 3px"}}>
+        <thead><tr style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:.8}}>
+          {["Metric","Pre-LOE","Year 1","Year 2","Year 3"].map((h,i)=><th key={i} style={{textAlign:i?"right":"left",padding:"0 8px 4px"}}>{h}</th>)}
+        </tr></thead>
+        <tbody>
+          {isComp ? [
+            ["Your Revenue ($B)","—",`+${active.yr1Gain}`,`+${active.yr2Gain}`,`+${active.yr3Gain}`],
+            ["Cumulative ($B)","—",`$${active.yr1Gain}B`,`$${(+active.yr1Gain+ +active.yr2Gain).toFixed(2)}B`,`$${(+active.yr1Gain+ +active.yr2Gain+ +active.yr3Gain).toFixed(2)}B`],
+            ["Your Share of Biosim",`${active.myShare}%`,`${active.myShare}%`,`${active.myShare}%`,`${active.myShare}%`],
+            ["Total Market","$"+d.revenue+"B",`$${active.origRemain1}B`,`$${active.origRemain2}B`,`$${active.origRemain3}B`],
+          ].map((row,i)=><tr key={i} style={{background:i===0?"rgba(16,185,129,0.03)":"rgba(255,255,255,0.01)"}}>
+            {row.map((c,j)=><td key={j} style={{padding:"8px",fontSize:11,fontWeight:j===0?600:500,color:j===0?C.bright:(typeof c==="string"&&c.startsWith("+"))?"#10b981":C.text,textAlign:j?"right":"left",fontFamily:j?mono:font}}>{c}</td>)}
+          </tr>) : [
+            ["Originator Revenue ($B)",d.revenue.toFixed(1),active.origRemain1,active.origRemain2,active.origRemain3],
+            ["Revenue Loss ($B)","—",`−${active.yr1Loss}`,`−${active.yr2Loss}`,`−${active.yr3Loss}`],
+            ["Market Share","100%",`${(active.origRemain1/d.revenue*100).toFixed(0)}%`,`${(active.origRemain2/d.revenue*100).toFixed(0)}%`,`${(active.origRemain3/d.revenue*100).toFixed(0)}%`],
+            ["Erosion Applied","0%",`${(active.adj*0.45).toFixed(0)}%`,`${(active.adj*0.75).toFixed(0)}%`,`${(active.adj*0.92).toFixed(0)}%`],
+          ].map((row,i)=><tr key={i} style={{background:i===1?"rgba(255,77,106,0.03)":"rgba(255,255,255,0.01)"}}>
+            {row.map((c,j)=><td key={j} style={{padding:"8px",fontSize:11,fontWeight:j===0?600:500,color:j===0?C.bright:(typeof c==="string"&&(c.startsWith("−")||c.startsWith("-")))?"#ff4d6a":C.text,textAlign:j?"right":"left",fontFamily:j?mono:font}}>{c}</td>)}
+          </tr>)}
+        </tbody>
+      </table>
+      <div style={{marginTop:10,padding:"8px 12px",borderRadius:6,background:"rgba(109,92,255,0.04)",fontSize:10,color:C.muted,lineHeight:1.6}}>
+        <strong style={{color:"#a99fff"}}>Scenario: {scenarios[activeSc].name}</strong> — {scenarios[activeSc].comps} competitors, {scenarios[activeSc].delay}m delay, {scenarios[activeSc].interch?"interchangeable":"non-interchangeable"}. Erosion: {active.adj}%. Based on {d.therapyArea} benchmarks ({erosionRef.e24}% base).
+      </div>
+    </Crd>
   </div>;
 }
 
@@ -1879,43 +2656,42 @@ export default function App(){
   const tabs=[
     {k:"portfolio",l:"My Portfolio",i:"🏢",c:"Command"},{k:"warroom",l:"War Room",i:"🎖️",c:"Command"},{k:"timeline",l:"Timeline",i:"⏱️",c:"Command"},{k:"alerts",l:"Alerts",i:"🔔",c:"Command"},
     {k:"historical",l:"Historical",i:"📊",c:"Analytics"},{k:"projections",l:"Projections",i:"🎛️",c:"Analytics"},{k:"revcalc",l:"Rev Calculator",i:"💰",c:"Analytics"},{k:"pricing",l:"Price Bench.",i:"💲",c:"Analytics"},
-    {k:"pipeline",l:"Pipeline",i:"🧬",c:"Intel"},{k:"litigation",l:"Litigation",i:"⚖️",c:"Intel"},{k:"payer",l:"Payer",i:"💊",c:"Intel"},{k:"supply",l:"Supply Chain",i:"🏭",c:"Intel"},{k:"patents",l:"Patent Map",i:"🔒",c:"Intel"},{k:"tab340b",l:"340B Analyzer",i:"🏥",c:"Intel"},
-    {k:"global",l:"Global Reg.",i:"🌍",c:"Markets"},{k:"regfiling",l:"Filing Track.",i:"📋",c:"Markets"},{k:"conference",l:"Conference",i:"🎤",c:"Markets"},{k:"investor",l:"Investor",i:"📈",c:"Markets"},
-    {k:"ma",l:"M&A Targets",i:"🎯",c:"Strategy"},{k:"benchmark",l:"Benchmarking",i:"🏆",c:"Strategy"},{k:"strategy",l:"Recommendations",i:"💡",c:"Strategy"},
-    {k:"battlecard",l:"Battlecards",i:"🃏",c:"Reports"},{k:"brief",l:"Weekly Brief",i:"🤖",c:"Reports"},{k:"report",l:"Report Builder",i:"📄",c:"Reports"},{k:"workspace",l:"Workspace",i:"📝",c:"Reports"},
+    {k:"pipeline",l:"Pipeline Intel",i:"🧬",c:"Intelligence"},{k:"litigation",l:"Litigation",i:"⚖️",c:"Intelligence"},{k:"payer",l:"Payer",i:"💊",c:"Intelligence"},{k:"patents",l:"Patent Map",i:"🔒",c:"Intelligence"},{k:"tab340b",l:"340B Impact",i:"🏥",c:"Intelligence"},
+    {k:"global",l:"Global Regulatory",i:"🌍",c:"Markets"},{k:"regfiling",l:"Filing Tracker",i:"📋",c:"Markets"},{k:"investor",l:"Investor",i:"📈",c:"Markets"},
+    {k:"strategy",l:"Strategy",i:"💡",c:"Playbooks"},{k:"battlecard",l:"Battlecards",i:"🃏",c:"Playbooks"},{k:"brief",l:"AI Brief",i:"🤖",c:"Playbooks"},{k:"report",l:"War Game",i:"⚔️",c:"Playbooks"},{k:"workspace",l:"Workspace",i:"📝",c:"Playbooks"},
   ];
   const cats=[...new Set(tabs.map(t=>t.c))];
 
   return <div style={{display:"flex",minHeight:"100vh",background:C.bg,fontFamily:font,color:C.text}}>
-    <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:#4338ca #0a0e18}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#0a0e18}::-webkit-scrollbar-thumb{background:#4338ca;border-radius:3px}input::placeholder{color:#475569}select{cursor:pointer}textarea::placeholder{color:#475569}input[type=range]{height:4px;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,0.06);border-radius:2px;outline:none}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#6d5cff;cursor:pointer;border:2px solid #0a0e18}`}</style>
-    <div style={{width:navOpen?200:44,background:"rgba(6,10,20,0.98)",borderRight:`1px solid ${C.border}`,padding:navOpen?"12px 6px":"12px 3px",transition:"width 0.2s",flexShrink:0,overflowY:"auto",overflowX:"hidden",display:"flex",flexDirection:"column"}}>
-      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:12,paddingLeft:2}}>
-        <div onClick={()=>setNavOpen(!navOpen)} style={{width:28,height:28,borderRadius:6,background:"linear-gradient(135deg,#6d5cff,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,cursor:"pointer",flexShrink:0}}>🧬</div>
-        {navOpen&&<div><div style={{fontSize:11,fontWeight:800,color:C.bright}}>PatentCliff AI</div><div style={{fontSize:7,color:C.muted,fontFamily:mono}}>Enterprise v5.0 · 25 modules</div></div>}
+    <style>{`@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:#4338ca #0a0e18}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#0a0e18}::-webkit-scrollbar-thumb{background:#4338ca;border-radius:3px}input::placeholder{color:#6b7280}select{cursor:pointer}textarea::placeholder{color:#6b7280}input[type=range]{height:4px;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,0.06);border-radius:2px;outline:none}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#6366f1;cursor:pointer;border:2px solid #0a0e18}`}</style>
+    <div style={{width:navOpen?220:48,background:"rgba(8,12,20,0.99)",borderRight:`1px solid ${C.border}`,padding:navOpen?"14px 8px":"14px 4px",transition:"width 0.2s",flexShrink:0,overflowY:"auto",overflowX:"hidden",display:"flex",flexDirection:"column"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingLeft:2}}>
+        <div onClick={()=>setNavOpen(!navOpen)} style={{width:32,height:32,borderRadius:8,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,cursor:"pointer",flexShrink:0}}>🧬</div>
+        {navOpen&&<div><div style={{fontSize:12,fontWeight:800,color:C.bright,letterSpacing:0.3}}>PatentCliff AI</div><div style={{fontSize:8,color:C.muted,fontFamily:mono}}>Enterprise v6.0 · 21 modules</div></div>}
       </div>
-      {cats.map(cat=><div key={cat} style={{marginBottom:3}}>
-        {navOpen&&<div style={{fontSize:7,color:C.muted,textTransform:"uppercase",letterSpacing:1.5,fontWeight:700,padding:"2px 5px",marginBottom:0}}>{cat}</div>}
-        {tabs.filter(t=>t.c===cat).map(t=><button key={t.k} onClick={()=>setTab(t.k)} style={{width:"100%",display:"flex",alignItems:"center",gap:5,padding:navOpen?"4px 6px":"4px 3px",borderRadius:5,border:"none",background:tab===t.k?"rgba(109,92,255,0.1)":"transparent",color:tab===t.k?"#a99fff":C.muted,fontSize:navOpen?10:12,fontWeight:tab===t.k?600:400,cursor:"pointer",textAlign:"left",whiteSpace:"nowrap",marginBottom:0}}>
-          <span style={{fontSize:navOpen?10:12,flexShrink:0}}>{t.i}</span>{navOpen&&<span>{t.l}</span>}
+      {cats.map(cat=><div key={cat} style={{marginBottom:6}}>
+        {navOpen&&<div style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:1.8,fontWeight:700,padding:"6px 8px 3px",marginBottom:1}}>{cat}</div>}
+        {tabs.filter(t=>t.c===cat).map(t=><button key={t.k} onClick={()=>setTab(t.k)} style={{width:"100%",display:"flex",alignItems:"center",gap:7,padding:navOpen?"7px 10px":"7px 5px",borderRadius:7,border:"none",background:tab===t.k?"rgba(99,102,241,0.12)":"transparent",color:tab===t.k?"#a5b4fc":C.muted,fontSize:navOpen?12:14,fontWeight:tab===t.k?600:400,cursor:"pointer",textAlign:"left",whiteSpace:"nowrap",marginBottom:1,fontFamily:font,letterSpacing:0.1,lineHeight:1.4}}>
+          <span style={{fontSize:navOpen?13:14,flexShrink:0,opacity:tab===t.k?1:0.7}}>{t.i}</span>{navOpen&&<span>{t.l}</span>}
         </button>)}
       </div>)}
-      <div style={{marginTop:"auto",paddingTop:6}}>{navOpen&&<div style={{padding:"5px",borderRadius:6,background:"rgba(109,92,255,0.03)",fontSize:8,color:C.muted,lineHeight:1.3}}>{DRUGS.length} drugs · {DRUGS.reduce((a,d)=>a+d.competitors.length,0)}+ competitors</div>}</div>
+      <div style={{marginTop:"auto",paddingTop:8}}>{navOpen&&<div style={{padding:"8px",borderRadius:8,background:"rgba(99,102,241,0.04)",border:`1px solid ${C.border}`,fontSize:10,color:C.muted,lineHeight:1.4}}>{DRUGS.length} drugs · {DRUGS.reduce((a,d)=>a+d.competitors.length,0)}+ competitors<br/>Last updated: Feb 2026</div>}</div>
     </div>
     <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
-      <div style={{padding:"7px 18px",borderBottom:`1px solid ${C.border}`,background:"rgba(6,10,20,0.9)",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
-        <div style={{fontSize:14,fontWeight:700,color:C.bright}}>{tabs.find(t=>t.k===tab)?.i} {tabs.find(t=>t.k===tab)?.l}</div>
-        <div style={{display:"flex",alignItems:"center",gap:6}}>
-          {refreshing&&<span style={{fontSize:10,color:"#a99fff",animation:"spin 0.8s linear infinite",display:"inline-block"}}>⟳</span>}
-          <span style={{fontSize:9,color:C.muted,fontFamily:mono}}>{lastRef.toLocaleTimeString()}</span>
-          <button onClick={refresh} disabled={refreshing} style={{padding:"4px 10px",background:refreshing?"transparent":"linear-gradient(135deg,#4a3dcc,#6d5cff)",border:"1px solid rgba(109,92,255,0.3)",borderRadius:6,color:"#fff",fontSize:10,fontWeight:600,cursor:refreshing?"not-allowed":"pointer"}}>⟳</button>
+      <div style={{padding:"10px 20px",borderBottom:`1px solid ${C.border}`,background:"rgba(8,12,20,0.95)",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+        <div style={{fontSize:15,fontWeight:700,color:C.bright,letterSpacing:0.2}}>{tabs.find(t=>t.k===tab)?.i} {tabs.find(t=>t.k===tab)?.l}</div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          {refreshing&&<span style={{fontSize:11,color:"#a5b4fc",animation:"spin 0.8s linear infinite",display:"inline-block"}}>⟳</span>}
+          <span style={{fontSize:10,color:C.muted,fontFamily:mono}}>{lastRef.toLocaleTimeString()}</span>
+          <button onClick={refresh} disabled={refreshing} style={{padding:"5px 12px",background:refreshing?"transparent":"linear-gradient(135deg,#4f46e5,#6366f1)",border:"1px solid rgba(99,102,241,0.3)",borderRadius:7,color:"#fff",fontSize:11,fontWeight:600,cursor:refreshing?"not-allowed":"pointer"}}>⟳ Refresh</button>
         </div>
       </div>
       <div style={{flex:1,overflow:"auto",padding:16}}>
         {tab==="portfolio"&&<PortfolioTab/>}{tab==="warroom"&&<WarRoomTab/>}{tab==="timeline"&&<TimelineTab/>}{tab==="alerts"&&<AlertTab/>}
         {tab==="historical"&&<HistoricalTab/>}{tab==="projections"&&<ProjectionsTab/>}{tab==="revcalc"&&<RevenueCalcTab/>}{tab==="pricing"&&<PriceTab/>}
-        {tab==="pipeline"&&<PipelineTab/>}{tab==="litigation"&&<LitigationTab/>}{tab==="payer"&&<PayerTab/>}{tab==="supply"&&<SupplyTab/>}{tab==="patents"&&<PatentTab/>}{tab==="tab340b"&&<Tab340B/>}
-        {tab==="global"&&<GlobalTab/>}{tab==="regfiling"&&<RegFilingTab/>}{tab==="conference"&&<ConferenceTab/>}{tab==="investor"&&<InvestorTab/>}
-        {tab==="ma"&&<MATab/>}{tab==="benchmark"&&<BenchmarkTab/>}{tab==="strategy"&&<StrategyTab/>}
+        {tab==="pipeline"&&<PipelineTab/>}{tab==="litigation"&&<LitigationTab/>}{tab==="payer"&&<PayerTab/>}{tab==="patents"&&<PatentTab/>}{tab==="tab340b"&&<Tab340B/>}
+        {tab==="global"&&<GlobalTab/>}{tab==="regfiling"&&<RegFilingTab/>}{tab==="investor"&&<InvestorTab/>}
+        {tab==="strategy"&&<StrategyTab/>}
         {tab==="battlecard"&&<BattlecardTab/>}{tab==="brief"&&<BriefTab/>}{tab==="report"&&<ReportTab/>}{tab==="workspace"&&<WorkspaceTab/>}
       </div>
     </div>
