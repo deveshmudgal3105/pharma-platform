@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, createContext, useContext } from "react";
 import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ScatterChart, Scatter, ReferenceLine } from "recharts";
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -390,6 +390,10 @@ const SIGNALS = [
   {date:"Feb 8",type:"M&A",sev:"high",drug:"Industry",detail:"Fresenius Kabi acquires 45% of mAbxience for $850M. Gains trastuzumab/bevacizumab EU.",src:"SEC",link:`https://www.sec.gov/cgi-bin/browse-edgar?company=fresenius+kabi&CIK=&type=10-K&action=getcompany`},
 ];
 
+// ═══════ MOBILE / RESPONSIVE ═══════
+const MobileCtx = createContext(false);
+const useMobile = () => useContext(MobileCtx);
+
 // ═══════ HELPER COMPONENTS ═══════
 const sigC = s => ({confirmed:{bg:"rgba(0,212,170,0.1)",t:"#00d4aa"},strong:{bg:"rgba(109,92,255,0.1)",t:"#8b7fff"},moderate:{bg:"rgba(255,140,66,0.1)",t:"#ff8c42"},early:{bg:"rgba(168,85,247,0.1)",t:"#c084fc"},speculative:{bg:"rgba(90,99,128,0.1)",t:"#7a839e"}}[s]||{bg:"rgba(90,99,128,0.1)",t:"#7a839e"});
 const pPct = p => ({"Pre-clinical":10,"Phase I":25,"Phase I (PK)":25,"Phase I/III":45,"Phase II":45,"Phase III":65,"ANDA Filed":78,"Tentative Approval":85,"Approved":90,"Approved — Settlement":90,"Launched":100,"Launched (at-risk)":100}[p]||5);
@@ -400,10 +404,13 @@ const sevC = s => s==="critical"?"#ff4d6a":s==="high"?"#ff8c42":s==="medium"?"#f
 function Lnk({l,u}){return <span onClick={()=>{try{window.open(u,"_blank","noopener,noreferrer")}catch(e){navigator.clipboard&&navigator.clipboard.writeText(u)}}} style={{fontSize:11,padding:"3px 9px",borderRadius:5,textDecoration:"none",background:"rgba(99,102,241,0.06)",color:"#818cf8",border:"1px solid rgba(99,102,241,0.14)",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:3,whiteSpace:"nowrap",fontWeight:500,userSelect:"none"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(99,102,241,0.18)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(99,102,241,0.06)"} title={u}>{l}<span style={{fontSize:8}}>↗</span></span>}
 function Bdg({s}){const c=sigC(s);return <span style={{display:"inline-block",padding:"3px 10px",borderRadius:14,fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:.3,background:c.bg,color:c.t}}>{s}</span>}
 function PBar({p}){const v=pPct(p);return <div style={{display:"flex",alignItems:"center",gap:6,minWidth:140}}><div style={{flex:1,height:5,background:"rgba(255,255,255,0.05)",borderRadius:3,overflow:"hidden"}}><div style={{width:`${v}%`,height:"100%",borderRadius:3,background:p==="Launched"?"#10b981":"#6366f1"}}/></div><span style={{fontSize:11,color:"#818cf8",fontWeight:500,whiteSpace:"nowrap"}}>{p}</span></div>}
-function Stat({l,v,c,sub}){return <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",borderLeft:`3px solid ${c}`}}><div style={{fontSize:10,color:C.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7}}>{l}</div><div style={{fontSize:20,fontWeight:800,color:c,marginTop:2,fontFamily:mono}}>{v}</div>{sub&&<div style={{fontSize:10,color:C.muted,marginTop:2}}>{sub}</div>}</div>}
-function Crd({children,style={},...rest}){return <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:18,...style}} {...rest}>{children}</div>}
-function Title({children,sub}){return <div style={{marginBottom:14}}><div style={{fontSize:14,fontWeight:700,color:C.bright}}>{children}</div>{sub&&<div style={{fontSize:12,color:C.muted,marginTop:2}}>{sub}</div>}</div>}
-function Select({value,onChange,options,placeholder,style={}}){return <select value={value} onChange={e=>onChange(e.target.value)} style={{padding:"8px 14px",background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:8,color:C.bright,fontSize:13,outline:"none",fontFamily:font,cursor:"pointer",minWidth:180,...style}}><option value="" style={{background:"#0a0e18"}}>{placeholder}</option>{options.map((o,i)=><option key={i} value={typeof o==="string"?o:o.value} style={{background:"#0a0e18"}}>{typeof o==="string"?o:o.label}</option>)}</select>}
+function Stat({l,v,c,sub}){const m=useMobile();return <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:m?"10px 10px":"12px 14px",borderLeft:`3px solid ${c}`}}><div style={{fontSize:m?9:10,color:C.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7}}>{l}</div><div style={{fontSize:m?16:20,fontWeight:800,color:c,marginTop:2,fontFamily:mono}}>{v}</div>{sub&&<div style={{fontSize:m?9:10,color:C.muted,marginTop:2}}>{sub}</div>}</div>}
+function Crd({children,style={},...rest}){const m=useMobile();return <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:m?12:18,...style}} {...rest}>{children}</div>}
+function Title({children,sub}){const m=useMobile();return <div style={{marginBottom:m?10:14}}><div style={{fontSize:m?13:14,fontWeight:700,color:C.bright}}>{children}</div>{sub&&<div style={{fontSize:m?10:12,color:C.muted,marginTop:2}}>{sub}</div>}</div>}
+function Select({value,onChange,options,placeholder,style={}}){const m=useMobile();return <select value={value} onChange={e=>onChange(e.target.value)} style={{padding:m?"8px 10px":"8px 14px",background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:8,color:C.bright,fontSize:m?12:13,outline:"none",fontFamily:font,cursor:"pointer",minWidth:m?0:180,width:m?"100%":"auto",maxWidth:"100%",...style}}><option value="" style={{background:"#0a0e18"}}>{placeholder}</option>{options.map((o,i)=><option key={i} value={typeof o==="string"?o:o.value} style={{background:"#0a0e18"}}>{typeof o==="string"?o:o.label}</option>)}</select>}
+
+// Responsive grid helper: stacks to 1 col on mobile for 2-col layouts
+function RGrid({cols=2,gap=14,mb=16,children,style={}}){const m=useMobile();return <div style={{display:"grid",gridTemplateColumns:m?"1fr":`repeat(${cols},1fr)`,gap:m?10:gap,marginBottom:mb,...style}}>{children}</div>}
 
 const CTip = ({active,payload,label}) => {
   if(!active||!payload?.length) return null;
@@ -440,7 +447,7 @@ function CustomMolPanel({mol, userCompany}){
       <strong style={{color:"#a99fff"}}>Status:</strong> {meta.status}
     </div>
 
-    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:8,marginBottom:14}}>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8,marginBottom:14}}>
       <Stat l="Therapy Area" v={meta.area?.split("/")[0]} c="#6d5cff"/>
       <Stat l="Type" v={meta.type} c="#8b7fff"/>
       <Stat l="Competitors" v={meta.players} c={meta.players>3?"#00d4aa":"#ff8c42"}/>
@@ -451,7 +458,7 @@ function CustomMolPanel({mol, userCompany}){
     {/* Analog-based projection */}
     <div style={{marginBottom:12}}>
       <Title sub={`Based on ${analog.drug} (${analog.molecule}) — same therapy area dynamics`}>Estimated Projection (Analog-Based)</Title>
-      <ResponsiveContainer width="100%" height={180}>
+      <ResponsiveContainer width="100%" height={m?140:180}>
         <AreaChart data={analog.projection}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="y" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}}/><Tooltip content={<CTip/>}/><Area type="monotone" dataKey="oR" stackId="1" stroke="#6d5cff" fill="rgba(109,92,255,0.15)" name="Originator (est.)"/><Area type="monotone" dataKey="bR" stackId="1" stroke="#00d4aa" fill="rgba(0,212,170,0.15)" name="Biosimilar (est.)"/></AreaChart>
       </ResponsiveContainer>
       <div style={{fontSize:10,color:C.muted,fontStyle:"italic",textAlign:"center"}}>⚠️ Analog-based estimate. Actual trajectory will depend on patent landscape, competitor count, and payer dynamics.</div>
@@ -476,6 +483,7 @@ function CustomMolPanel({mol, userCompany}){
 // TAB 1: HISTORICAL (CHANGE 1: dropdown + "All" option)
 // ═══════════════════════════════════════════
 function HistoricalTab() {
+  const m=useMobile();
   const [sel, setSel] = useState("all");
   const [customMol, setCustomMol] = useState("");
   const selected = sel==="all"?null:HISTORICAL_LOE.find((_,i)=>i===+sel);
@@ -483,31 +491,31 @@ function HistoricalTab() {
 
   return <div>
     <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:18}}>
-      <Select value={sel} onChange={setSel} options={[{value:"all",label:"📊 All LOE Events — Comparative View"},...HISTORICAL_LOE.map((h,i)=>({value:String(i),label:`${h.drug} (${h.molecule}) — ${h.loeDate}`}))]} placeholder="Select historical LOE..." style={{minWidth:320}}/>
+      <Select value={sel} onChange={setSel} options={[{value:"all",label:"📊 All LOE Events — Comparative View"},...HISTORICAL_LOE.map((h,i)=>({value:String(i),label:`${h.drug} (${h.molecule}) — ${h.loeDate}`}))]} placeholder="Select historical LOE..." style={{minWidth:m?0:320}}/>
       <Select value={customMol} onChange={setCustomMol} options={ALL_MOLECULES} placeholder="🔍 Search any molecule..."/>
       {customMol&&<CustomMolPanel mol={customMol}/>}
     </div>
 
     {sel==="all"?<div>
       <Title sub="Cross-comparison of all 8 historical LoE events">All Historical LoE Events — Comparative Dashboard</Title>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8,marginBottom:18}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8,marginBottom:18}}>
         <Stat l="Events Tracked" v={HISTORICAL_LOE.length} c="#6d5cff"/><Stat l="Peak Rev (Total)" v={`$${HISTORICAL_LOE.reduce((a,h)=>a+h.peakRevenue,0).toFixed(1)}B`} c="#ff8c42"/><Stat l="Current Rev" v={`$${HISTORICAL_LOE.reduce((a,h)=>a+h.currentRevenue,0).toFixed(1)}B`} c="#ff4d6a"/><Stat l="Avg Erosion" v={`${Math.round(HISTORICAL_LOE.reduce((a,h)=>a+(1-h.currentRevenue/h.peakRevenue)*100,0)/HISTORICAL_LOE.length)}%`} c="#ff4d6a"/><Stat l="Avg Players" v={(HISTORICAL_LOE.reduce((a,h)=>a+h.playersNow,0)/HISTORICAL_LOE.length).toFixed(1)} c="#00d4aa"/>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
-        <Crd><Title>12-Month Price Erosion by Drug</Title><ResponsiveContainer width="100%" height={220}><BarChart data={allOverlay}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="drug" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,100]}/><Tooltip content={<CTip/>}/><Bar dataKey="erosion12m" name="12m Price Erosion %" radius={[3,3,0,0]}>{allOverlay.map((d,i)=><Cell key={i} fill={d.erosion12m>50?"#ff4d6a":d.erosion12m>35?"#ff8c42":"#6d5cff"}/>)}</Bar></BarChart></ResponsiveContainer></Crd>
-        <Crd><Title>12-Month Biosimilar Market Share by Drug</Title><ResponsiveContainer width="100%" height={220}><BarChart data={allOverlay}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="drug" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,100]}/><Tooltip content={<CTip/>}/><Bar dataKey="share12m" name="12m Biosimilar Share %" radius={[3,3,0,0]}>{allOverlay.map((d,i)=><Cell key={i} fill={d.share12m>50?"#00d4aa":d.share12m>30?"#6d5cff":"#ff8c42"}/>)}</Bar></BarChart></ResponsiveContainer></Crd>
+      <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:m?10:14,marginBottom:16}}>
+        <Crd><Title>12-Month Price Erosion by Drug</Title><ResponsiveContainer width="100%" height={m?160:220}><BarChart data={allOverlay}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="drug" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,100]}/><Tooltip content={<CTip/>}/><Bar dataKey="erosion12m" name="12m Price Erosion %" radius={[3,3,0,0]}>{allOverlay.map((d,i)=><Cell key={i} fill={d.erosion12m>50?"#ff4d6a":d.erosion12m>35?"#ff8c42":"#6d5cff"}/>)}</Bar></BarChart></ResponsiveContainer></Crd>
+        <Crd><Title>12-Month Biosimilar Market Share by Drug</Title><ResponsiveContainer width="100%" height={m?160:220}><BarChart data={allOverlay}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="drug" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,100]}/><Tooltip content={<CTip/>}/><Bar dataKey="share12m" name="12m Biosimilar Share %" radius={[3,3,0,0]}>{allOverlay.map((d,i)=><Cell key={i} fill={d.share12m>50?"#00d4aa":d.share12m>30?"#6d5cff":"#ff8c42"}/>)}</Bar></BarChart></ResponsiveContainer></Crd>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-        <Crd><Title>Price Erosion vs # Competitors</Title><ResponsiveContainer width="100%" height={190}><BarChart data={PRICE_EROSION_BY_PLAYERS}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="players" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,100]}/><Tooltip content={<CTip/>}/><Bar dataKey="yr1" fill="#6d5cff" name="Yr1%" radius={[3,3,0,0]}/><Bar dataKey="yr2" fill="#ff8c42" name="Yr2%" radius={[3,3,0,0]}/><Bar dataKey="yr3" fill="#ff4d6a" name="Yr3%" radius={[3,3,0,0]}/></BarChart></ResponsiveContainer></Crd>
-        <Crd><Title>Erosion Speed by Therapy Area (24m)</Title><ResponsiveContainer width="100%" height={190}><BarChart data={EROSION_BY_THERAPY} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis type="number" tick={{fontSize:10,fill:C.muted}} domain={[0,100]}/><YAxis type="category" dataKey="area" tick={{fontSize:10,fill:C.muted}} width={80}/><Tooltip content={<CTip/>}/><Bar dataKey="e24" fill="#6d5cff" name="Erosion%" radius={[0,3,3,0]}/><Bar dataKey="s24" fill="#00d4aa" name="Share%" radius={[0,3,3,0]}/></BarChart></ResponsiveContainer></Crd>
+      <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:m?10:14}}>
+        <Crd><Title>Price Erosion vs # Competitors</Title><ResponsiveContainer width="100%" height={m?150:190}><BarChart data={PRICE_EROSION_BY_PLAYERS}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="players" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,100]}/><Tooltip content={<CTip/>}/><Bar dataKey="yr1" fill="#6d5cff" name="Yr1%" radius={[3,3,0,0]}/><Bar dataKey="yr2" fill="#ff8c42" name="Yr2%" radius={[3,3,0,0]}/><Bar dataKey="yr3" fill="#ff4d6a" name="Yr3%" radius={[3,3,0,0]}/></BarChart></ResponsiveContainer></Crd>
+        <Crd><Title>Erosion Speed by Therapy Area (24m)</Title><ResponsiveContainer width="100%" height={m?150:190}><BarChart data={EROSION_BY_THERAPY} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis type="number" tick={{fontSize:10,fill:C.muted}} domain={[0,100]}/><YAxis type="category" dataKey="area" tick={{fontSize:10,fill:C.muted}} width={80}/><Tooltip content={<CTip/>}/><Bar dataKey="e24" fill="#6d5cff" name="Erosion%" radius={[0,3,3,0]}/><Bar dataKey="s24" fill="#00d4aa" name="Share%" radius={[0,3,3,0]}/></BarChart></ResponsiveContainer></Crd>
       </div>
     </div>:selected&&<div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8,marginBottom:18}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8,marginBottom:18}}>
         <Stat l="Peak Revenue" v={`$${selected.peakRevenue}B`} c="#6d5cff"/><Stat l="Current Revenue" v={`$${selected.currentRevenue}B`} c={selected.currentRevenue<selected.peakRevenue/2?"#ff4d6a":"#ff8c42"}/><Stat l="Revenue Erosion" v={`${Math.round((1-selected.currentRevenue/selected.peakRevenue)*100)}%`} c="#ff4d6a"/><Stat l="Players at LOE" v={selected.playersAtLOE} c="#00d4aa"/><Stat l="Players Now" v={selected.playersNow} c="#ff8c42"/><Stat l="Type" v={selected.type} c="#8b7fff"/>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
-        <Crd><Title>Market Share Shift</Title><ResponsiveContainer width="100%" height={200}><AreaChart data={selected.marketShareData.map(d=>({month:d.m,Originator:d.o,Biosimilar:d.b}))}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="month" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,100]}/><Tooltip content={<CTip/>}/><Area type="monotone" dataKey="Originator" stackId="1" stroke="#6d5cff" fill="rgba(109,92,255,0.2)"/><Area type="monotone" dataKey="Biosimilar" stackId="1" stroke="#00d4aa" fill="rgba(0,212,170,0.2)"/></AreaChart></ResponsiveContainer></Crd>
-        <Crd><Title>Price Erosion</Title><ResponsiveContainer width="100%" height={200}><ComposedChart data={selected.priceData.map(d=>({month:d.m,Price:d.p,Discount:d.d}))}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="month" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,100]}/><Tooltip content={<CTip/>}/><Area type="monotone" dataKey="Price" stroke="#6d5cff" fill="rgba(109,92,255,0.12)"/><Line type="monotone" dataKey="Discount" stroke="#ff4d6a" strokeWidth={2} dot={{r:3}}/></ComposedChart></ResponsiveContainer></Crd>
+      <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:m?10:14,marginBottom:16}}>
+        <Crd><Title>Market Share Shift</Title><ResponsiveContainer width="100%" height={m?150:200}><AreaChart data={selected.marketShareData.map(d=>({month:d.m,Originator:d.o,Biosimilar:d.b}))}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="month" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,100]}/><Tooltip content={<CTip/>}/><Area type="monotone" dataKey="Originator" stackId="1" stroke="#6d5cff" fill="rgba(109,92,255,0.2)"/><Area type="monotone" dataKey="Biosimilar" stackId="1" stroke="#00d4aa" fill="rgba(0,212,170,0.2)"/></AreaChart></ResponsiveContainer></Crd>
+        <Crd><Title>Price Erosion</Title><ResponsiveContainer width="100%" height={m?150:200}><ComposedChart data={selected.priceData.map(d=>({month:d.m,Price:d.p,Discount:d.d}))}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="month" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,100]}/><Tooltip content={<CTip/>}/><Area type="monotone" dataKey="Price" stroke="#6d5cff" fill="rgba(109,92,255,0.12)"/><Line type="monotone" dataKey="Discount" stroke="#ff4d6a" strokeWidth={2} dot={{r:3}}/></ComposedChart></ResponsiveContainer></Crd>
       </div>
       <div style={{background:"rgba(109,92,255,0.04)",border:"1px solid rgba(109,92,255,0.12)",borderRadius:10,padding:"12px 16px"}}>
         <div style={{fontSize:11,fontWeight:700,color:"#a99fff",marginBottom:3}}>📡 KEY INSIGHT</div>
@@ -522,6 +530,7 @@ function HistoricalTab() {
 // TAB 2: PROJECTIONS & SIMULATOR (CHANGE 2,3)
 // ═══════════════════════════════════════════
 function ProjectionsTab() {
+  const m=useMobile();
   // Filter out molecules that are now in historical tab
   const projDrugs = DRUGS.filter(d => !HISTORICAL_LOE.some(h => h.molecule === d.molecule));
   const [sel, setSel] = useState(projDrugs.length > 0 ? DRUGS.indexOf(projDrugs[0]) : 1);
@@ -585,7 +594,7 @@ function ProjectionsTab() {
 
   return <div>
     <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:16}}>
-      <Select value={sel} onChange={v=>setSel(+v)} options={projDrugs.map((d)=>({value:String(DRUGS.indexOf(d)),label:`${d.drug} — ${d.molecule} (LOE ${new Date(d.patentExpiry).getFullYear()})`}))} placeholder="Select molecule..." style={{minWidth:350}}/>
+      <Select value={sel} onChange={v=>setSel(+v)} options={projDrugs.map((d)=>({value:String(DRUGS.indexOf(d)),label:`${d.drug} — ${d.molecule} (LOE ${new Date(d.patentExpiry).getFullYear()})`}))} placeholder="Select molecule..." style={{minWidth:m?0:350}}/>
       <Select value={customMol} onChange={setCustomMol} options={ALL_MOLECULES.filter(m=>!DRUGS.some(d=>d.molecule===m))} placeholder="🔍 Search other molecule..."/>
       <Select value={userCompany} onChange={setUserCompany} options={[{value:"",label:"— No company (Total Market View) —"},...COMPANIES.map(c=>({value:c.name,label:`🏢 ${c.name} (${c.type})`}))]} placeholder="🏢 Select your company..."/>
     </div>
@@ -593,14 +602,14 @@ function ProjectionsTab() {
     {userCompany&&userCo&&<div style={{padding:"8px 14px",borderRadius:8,background:isOrig?"rgba(255,77,106,0.06)":"rgba(0,212,170,0.06)",border:`1px solid ${isOrig?"rgba(255,77,106,0.15)":"rgba(0,212,170,0.15)"}`,color:isOrig?"#ff8c42":"#10b981",fontSize:11,marginBottom:14}}>🏢 Viewing as <strong>{userCompany}</strong> ({isOrig?"Originator":"Biosimilar Competitor"}) — {isOrig?"Showing revenue erosion risk":"Showing your projected market capture"}</div>}
     {!userCompany&&<div style={{padding:"8px 14px",borderRadius:8,background:"rgba(109,92,255,0.06)",border:"1px solid rgba(109,92,255,0.15)",color:"#a99fff",fontSize:11,marginBottom:14}}>📊 Total Market View — Showing all biosimilars combined vs originator. Select a company above for company-specific projections.</div>}
 
-    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:8,marginBottom:16}}>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(90px,1fr))",gap:8,marginBottom:16}}>
       <Stat l="Revenue" v={`$${p.revenue}B`} c="#6d5cff"/><Stat l="LOE" v={new Date(p.patentExpiry).getFullYear()} c="#ff8c42"/><Stat l="Base Competitors" v={actualCompCount} c="#00d4aa" sub="Actual"/><Stat l="Sim Competitors" v={simCompCount} c={simCompCount!==actualCompCount?"#ff4d6a":"#00d4aa"} sub={simCompCount!==actualCompCount?"Modified":"Base"}/><Stat l="Sim Yr3 Price" v={`${simData[simData.length-1]?.sP||simData[simData.length-1]?.pr}%`} c="#ff4d6a"/>
     </div>
 
     {/* Scenario Controls */}
     <Crd style={{marginBottom:16,borderColor:"rgba(109,92,255,0.2)",background:"rgba(109,92,255,0.02)"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><div style={{fontSize:12,fontWeight:700,color:C.bright}}>🎛️ Scenario Simulator</div><button onClick={()=>{setCompetitors(null);setInterch(false);setDelay(0);setIra(false);}} style={{padding:"4px 12px",borderRadius:6,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,fontSize:10,cursor:"pointer"}}>↺ Reset to Base Case</button></div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:14}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:14}}>
         <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:5}}>Competitors at Launch <span style={{fontSize:9,color:C.muted}}>(Base: {actualCompCount})</span></div><input type="range" min={1} max={8} value={simCompCount} onChange={e=>setCompetitors(+e.target.value)} style={{width:"100%"}}/><div style={{textAlign:"center",fontSize:13,fontWeight:700,color:simCompCount!==actualCompCount?"#ff4d6a":"#a99fff"}}>{simCompCount} {simCompCount!==actualCompCount?`(base: ${actualCompCount})`:""}</div></div>
         <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:5}}>Launch Delay (months)</div><input type="range" min={0} max={24} value={delay} onChange={e=>setDelay(+e.target.value)} style={{width:"100%"}}/><div style={{textAlign:"center",fontSize:13,fontWeight:700,color:"#ff8c42"}}>{delay}m</div></div>
         <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:8}}>Interchangeable</div><button onClick={()=>setInterch(!interch)} style={{padding:"7px 16px",borderRadius:8,border:`1px solid ${interch?"#00d4aa":C.border}`,background:interch?"rgba(0,212,170,0.1)":"transparent",color:interch?"#00d4aa":C.muted,fontSize:11,fontWeight:600,cursor:"pointer",width:"100%"}}>{interch?"✓ YES":"✗ NO"}</button></div>
@@ -609,9 +618,9 @@ function ProjectionsTab() {
     </Crd>
 
     {/* Charts: Show differently based on company selection */}
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:m?10:14,marginBottom:16}}>
       <Crd><Title sub={userCompany?(isOrig?"Your revenue decline":"Your market capture opportunity"):"Total biosimilar club vs originator"}>{userCompany?`${userCompany} — Revenue Projection ($B)`:"Total Market — Originator vs All Biosimilars ($B)"}</Title>
-        <ResponsiveContainer width="100%" height={240}><ComposedChart data={companySimData||simData}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="y" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}}/><Tooltip content={<CTip/>}/>
+        <ResponsiveContainer width="100%" height={m?180:240}><ComposedChart data={companySimData||simData}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="y" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}}/><Tooltip content={<CTip/>}/>
           {companySimData?<>
             <Area type="monotone" dataKey="myBase" stroke={isOrig?"#6d5cff":"#00d4aa"} fill={isOrig?"rgba(109,92,255,0.08)":"rgba(0,212,170,0.08)"} name={`${isOrig?"Orig":"Your"} (base)`} strokeDasharray="5 5"/>
             <Line type="monotone" dataKey="myRev" stroke={isOrig?"#ff4d6a":"#10b981"} strokeWidth={3} dot={{r:5,fill:isOrig?"#ff4d6a":"#10b981"}} name={`${isOrig?"Orig":"Your"} (sim)`}/>
@@ -624,7 +633,7 @@ function ProjectionsTab() {
         </ComposedChart></ResponsiveContainer>
       </Crd>
       <Crd><Title>Price Index — Base vs Sim</Title>
-        <ResponsiveContainer width="100%" height={240}><LineChart data={simData}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="y" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,110]}/><Tooltip content={<CTip/>}/><Line type="monotone" dataKey="pr" stroke="#6d5cff" strokeWidth={2} strokeDasharray="5 5" dot={{r:3}} name="Base %"/><Line type="monotone" dataKey="sP" stroke="#ff4d6a" strokeWidth={3} dot={{r:5,fill:"#ff4d6a"}} name="Sim %"/></LineChart></ResponsiveContainer>
+        <ResponsiveContainer width="100%" height={m?180:240}><LineChart data={simData}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="y" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,110]}/><Tooltip content={<CTip/>}/><Line type="monotone" dataKey="pr" stroke="#6d5cff" strokeWidth={2} strokeDasharray="5 5" dot={{r:3}} name="Base %"/><Line type="monotone" dataKey="sP" stroke="#ff4d6a" strokeWidth={3} dot={{r:5,fill:"#ff4d6a"}} name="Sim %"/></LineChart></ResponsiveContainer>
       </Crd>
     </div>
 
@@ -638,11 +647,11 @@ function ProjectionsTab() {
         <Title sub="Monthly market share (%) by competitor vs originator from LOE">Monthly Competitor-Level Forecast — All Players</Title>
         {(()=>{
           const months=["M1","M3","M6","M9","M12","M18","M24"];
-          const chartData=months.map(m=>{
-            const row={m};
+          const chartData=months.map(mo=>{
+            const row={m:mo};
             let totalBiosimShare=0;
             p.competitors.slice(0,5).forEach((c,i)=>{
-              const f=c.monthlyForecast?.find(x=>x.m===m);
+              const f=c.monthlyForecast?.find(x=>x.m===mo);
               const sh=f?f.share:0;
               row[`c${i}`]=sh;
               totalBiosimShare+=sh;
@@ -669,13 +678,13 @@ function ProjectionsTab() {
       {/* Per-dosage form charts */}
       <Crd style={{marginBottom:14}}>
         <Title sub="Projected market share erosion by dosage form">📦 Dosage Form Breakdown — Monthly Projections</Title>
-        <div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(p.dosageForms.length,3)},1fr)`,gap:14}}>
+        <div style={{display:"grid",gridTemplateColumns:m?"1fr":`repeat(${Math.min(p.dosageForms.length,3)},1fr)`,gap:14}}>
           {p.dosageForms.map((df,di)=>{
             const months=["M1","M3","M6","M9","M12","M18","M24"];
             const dosageRev=p.revenue*df.pct/100;
-            const chartData=months.map(m=>{
+            const chartData=months.map(mo=>{
               let totalBiosimShare=0;
-              p.competitors.slice(0,4).forEach(c=>{const f=c.monthlyForecast?.find(x=>x.m===m);totalBiosimShare+=(f?f.share:0);});
+              p.competitors.slice(0,4).forEach(c=>{const f=c.monthlyForecast?.find(x=>x.m===mo);totalBiosimShare+=(f?f.share:0);});
               // Adjust by dosage form preference (IV vials erode faster in institutional, PFS slower in retail)
               const formAdj=df.form.includes("IV")?1.15:df.form.includes("Tablet")?1.1:0.95;
               const adjShare=Math.min(95,totalBiosimShare*formAdj);
@@ -710,7 +719,7 @@ function ProjectionsTab() {
                 <td style={{padding:"6px",color:"#ff4d6a",fontSize:11,fontWeight:700}}>{p.originator} <span style={{fontSize:9,color:C.muted}}>(Originator)</span></td>
                 <td style={{padding:"6px",textAlign:"center"}}><span style={{fontSize:9,color:"#ff4d6a"}}>—</span></td>
                 {["M1","M3","M6","M9","M12","M18","M24"].map(m=>{
-                  let totalBiosim=0;p.competitors.forEach(c=>{const f=c.monthlyForecast?.find(x=>x.m===m);totalBiosim+=(f?f.share:0);});
+                  let totalBiosim=0;p.competitors.forEach(c=>{const f=c.monthlyForecast?.find(x=>x.m===mo);totalBiosim+=(f?f.share:0);});
                   const origShare=Math.max(0,100-totalBiosim);
                   return <td key={m} style={{padding:"4px",textAlign:"center",fontSize:10,color:origShare<50?"#ff4d6a":C.text,fontFamily:mono,fontWeight:origShare<30?700:400}}>{origShare.toFixed(0)}%</td>;
                 })}
@@ -718,7 +727,7 @@ function ProjectionsTab() {
               {p.competitors.map((c,i)=><tr key={i} style={{background:userCompany&&c.company.toLowerCase().includes(userCompany.toLowerCase())?"rgba(0,212,170,0.06)":"rgba(255,255,255,0.01)"}}>
               <td style={{padding:"6px",color:C.bright,fontSize:11,fontWeight:600}}>{c.company.split("(")[0].trim()}{userCompany&&c.company.toLowerCase().includes(userCompany.toLowerCase())&&<span style={{color:"#10b981",fontSize:9,marginLeft:4}}>← YOU</span>}</td>
               <td style={{padding:"6px",textAlign:"center"}}><div style={{width:30,height:4,background:"rgba(255,255,255,0.04)",borderRadius:2,margin:"0 auto",overflow:"hidden"}}><div style={{width:`${c.strength}%`,height:"100%",background:c.strength>80?"#00d4aa":"#6d5cff",borderRadius:2}}/></div><span style={{fontSize:9,color:C.muted}}>{c.strength}</span></td>
-              {["M1","M3","M6","M9","M12","M18","M24"].map(m=>{const f=c.monthlyForecast?.find(x=>x.m===m);return <td key={m} style={{padding:"4px",textAlign:"center",fontSize:10,color:f?C.text:C.muted,fontFamily:mono}}>{f?`${f.share}%`:"-"}</td>})}
+              {["M1","M3","M6","M9","M12","M18","M24"].map(m=>{const f=c.monthlyForecast?.find(x=>x.m===mo);return <td key={m} style={{padding:"4px",textAlign:"center",fontSize:10,color:f?C.text:C.muted,fontFamily:mono}}>{f?`${f.share}%`:"-"}</td>})}
             </tr>)}
             </tbody>
           </table>
@@ -732,6 +741,7 @@ function ProjectionsTab() {
 // TAB 3: PIPELINE (CHANGE 2: molecule dropdown)
 // ═══════════════════════════════════════════
 function PipelineTab() {
+  const m=useMobile();
   const [exp, setExp] = useState(null);
   const [search, setSearch] = useState("");
   const [molFilter, setMolFilter] = useState("");
@@ -770,6 +780,7 @@ function PipelineTab() {
 // TAB 4: WAR ROOM (CHANGE 4: company select + SWOT)
 // ═══════════════════════════════════════════
 function WarRoomTab() {
+  const m=useMobile();
   const [sel, setSel] = useState(2);
   const [userCompany, setUserCompany] = useState("");
   const [customMol, setCustomMol] = useState("");
@@ -801,7 +812,7 @@ function WarRoomTab() {
 
   return <div>
     <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:14}}>
-      <Select value={sel} onChange={v=>setSel(+v)} options={DRUGS.map((d,i)=>({value:String(i),label:`${d.drug} — ${d.molecule}`}))} placeholder="Select molecule..." style={{minWidth:300}}/>
+      <Select value={sel} onChange={v=>setSel(+v)} options={DRUGS.map((d,i)=>({value:String(i),label:`${d.drug} — ${d.molecule}`}))} placeholder="Select molecule..." style={{minWidth:m?0:300}}/>
       <Select value={customMol} onChange={setCustomMol} options={ALL_MOLECULES.filter(m=>!DRUGS.some(d=>d.molecule===m))} placeholder="🔍 Other molecule..."/>
       <Select value={userCompany} onChange={setUserCompany} options={COMPANIES.map(c=>c.name)} placeholder="🏢 Your company..."/>
     </div>
@@ -811,9 +822,9 @@ function WarRoomTab() {
     </div>}
 
     {/* War Room Header */}
-    <div style={{background:"linear-gradient(135deg,rgba(99,102,241,0.06),rgba(239,68,68,0.04))",border:"1px solid rgba(99,102,241,0.15)",borderRadius:12,padding:"18px 22px",marginBottom:16}}>
+    <div style={{background:"linear-gradient(135deg,rgba(99,102,241,0.06),rgba(239,68,68,0.04))",border:"1px solid rgba(99,102,241,0.15)",borderRadius:12,padding:m?"12px 14px":"18px 22px",marginBottom:16}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
-        <div><div style={{fontSize:20,fontWeight:800,color:C.bright}}>{drug.drug} War Room</div><div style={{fontSize:11,color:C.muted,marginTop:1}}>{drug.molecule} · {drug.originator} · {drug.indication}</div></div>
+        <div><div style={{fontSize:m?16:20,fontWeight:800,color:C.bright}}>{drug.drug} War Room</div><div style={{fontSize:11,color:C.muted,marginTop:1}}>{drug.molecule} · {drug.originator} · {drug.indication}</div></div>
         <div style={{display:"flex",gap:10}}>
           {[{l:"Revenue",v:`$${drug.revenue}B`,c:"#6366f1"},{l:"LOE",v:days<0?"EXPIRED":fDays(days),c:days<365?"#ef4444":"#f59e0b"},{l:"Competitors",v:drug.competitors.length,c:"#10b981"}].map((s,i)=><div key={i} style={{textAlign:"center",padding:"8px 16px",background:`${s.c}10`,borderRadius:8}}><div style={{fontSize:8,color:C.muted}}>{s.l}</div><div style={{fontSize:18,fontWeight:800,color:s.c,fontFamily:mono}}>{s.v}</div></div>)}
         </div>
@@ -829,7 +840,7 @@ function WarRoomTab() {
       </div>
     </div>
 
-    <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:14,marginBottom:14}}>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr":"2fr 1fr",gap:14,marginBottom:14}}>
       <Crd><Title>Competitor Pipeline</Title>
         <table style={{width:"100%",borderCollapse:"separate",borderSpacing:"0 2px"}}><thead><tr style={{fontSize:9,color:C.muted,textTransform:"uppercase"}}>
           <th style={{textAlign:"left",padding:"0 5px 3px"}}>Company</th><th style={{textAlign:"left",padding:"0 5px 3px",minWidth:130}}>Phase</th><th style={{textAlign:"left",padding:"0 5px 3px"}}>Signal</th><th style={{textAlign:"left",padding:"0 5px 3px"}}>Launch</th><th style={{textAlign:"left",padding:"0 5px 3px"}}>Sources</th>
@@ -847,7 +858,7 @@ function WarRoomTab() {
     {/* SWOT Analysis — CHANGE 4 */}
     {swot&&userCompany&&<Crd style={{marginBottom:14}}>
       <Title sub={`SWOT for ${userCompany} regarding ${drug.drug} (${drug.molecule})`}>📋 SWOT Analysis — {userCompany}</Title>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+      <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:10}}>
         <div style={{padding:"12px 14px",background:"rgba(0,212,170,0.04)",borderRadius:8,border:"1px solid rgba(0,212,170,0.1)"}}>
           <div style={{fontSize:11,fontWeight:700,color:"#00d4aa",marginBottom:6}}>💪 STRENGTHS</div>
           {swot.strengths.map((s,i)=><div key={i} style={{fontSize:11,color:C.text,lineHeight:1.7,paddingLeft:10,borderLeft:"2px solid rgba(0,212,170,0.2)",marginBottom:4}}>{s}</div>)}
@@ -867,7 +878,7 @@ function WarRoomTab() {
       </div>
     </Crd>}
 
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:m?10:14}}>
       <Crd><Title>⚖️ Litigation</Title>{relLit.length?relLit.map((l,i)=><div key={i} style={{background:"rgba(255,255,255,0.02)",borderRadius:8,padding:10,marginBottom:6,border:`1px solid ${C.border}`}}>
         <div style={{fontSize:12,fontWeight:600,color:C.bright}}>{l.plaintiff} v. {l.defendant}</div>
         <div style={{fontSize:11,color:C.text,lineHeight:1.5,marginTop:3}}>{l.dev}</div>
@@ -885,16 +896,18 @@ function WarRoomTab() {
 // ═══════════════════════════════════════════
 // TAB 5-12: Remaining tabs (Litigation, Payer, Supply, Global, M&A, Benchmark, Brief, Strategy)
 // ═══════════════════════════════════════════
-function LitigationTab(){return <div><Title sub="Patent litigation with probability-weighted outcomes">⚖️ Litigation Tracker</Title>{LITIGATION.map((l,i)=>{const s=l.status.includes("Settled");return <Crd key={i} style={{marginBottom:10,borderLeft:`3px solid ${s?"#00d4aa":"#ff4d6a"}`}}>
+function LitigationTab(){
+  const m=useMobile();return <div><Title sub="Patent litigation with probability-weighted outcomes">⚖️ Litigation Tracker</Title>{LITIGATION.map((l,i)=>{const s=l.status.includes("Settled");return <Crd key={i} style={{marginBottom:10,borderLeft:`3px solid ${s?"#00d4aa":"#ff4d6a"}`}}>
   <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:6}}><div><div style={{fontSize:14,fontWeight:700,color:C.bright}}>{l.drug} <span style={{color:C.muted,fontSize:11}}>({l.molecule})</span></div><div style={{fontSize:11,color:C.text}}>{l.plaintiff} v. {l.defendant}</div></div>
     <span style={{padding:"3px 10px",borderRadius:6,fontSize:10,fontWeight:600,background:s?"rgba(0,212,170,0.1)":"rgba(255,140,66,0.1)",color:s?"#00d4aa":"#ff8c42"}}>{l.status}</span></div>
-  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8,marginTop:12}}>{[["Court",l.court],["Filed",l.filed],["Next Date",l.nextDate],["Patents",l.patents],["Impact",l.impact]].map(([k,v],j)=><div key={j}><div style={{fontSize:9,color:C.muted}}>{k}</div><div style={{fontSize:11,color:k==="Impact"?"#ff4d6a":C.text,fontWeight:500}}>{v}</div></div>)}
+  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8,marginTop:12}}>{[["Court",l.court],["Filed",l.filed],["Next Date",l.nextDate],["Patents",l.patents],["Impact",l.impact]].map(([k,v],j)=><div key={j}><div style={{fontSize:9,color:C.muted}}>{k}</div><div style={{fontSize:11,color:k==="Impact"?"#ff4d6a":C.text,fontWeight:500}}>{v}</div></div>)}
     {!s&&<div><div style={{fontSize:9,color:C.muted}}>Win Prob</div><div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:50,height:4,background:"rgba(255,255,255,0.04)",borderRadius:2}}><div style={{width:`${l.winProb}%`,height:"100%",borderRadius:2,background:l.winProb>50?"#00d4aa":"#ff4d6a"}}/></div><span style={{fontSize:11,fontWeight:700,color:l.winProb>50?"#00d4aa":"#ff4d6a",fontFamily:mono}}>{l.winProb}%</span></div></div>}</div>
   <div style={{marginTop:10,padding:"8px 12px",background:"rgba(255,255,255,0.02)",borderRadius:6}}><div style={{fontSize:9,color:C.muted,fontWeight:600}}>LATEST</div><div style={{fontSize:11,color:C.text,lineHeight:1.5}}>{l.dev}</div></div>
   <div style={{marginTop:6,display:"flex",gap:4}}><Lnk l="Court Docket" u={l.link}/><Lnk l="Patents" u={BL.pat(l.molecule)}/><Lnk l="PTAB" u={BL.ptab(l.molecule)}/></div>
 </Crd>})}</div>}
 
 function PayerTab(){
+  const m=useMobile();
   const [selMol,setSelMol]=useState("");
   const drug = DRUGS.find(d=>d.molecule===selMol||d.drug===selMol);
 
@@ -959,7 +972,7 @@ function PayerTab(){
   return <div>
     <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:16}}>
       <Title sub="Key account dosage potential and formulary status by molecule">💊 Payer & Account Intelligence</Title>
-      <Select value={selMol} onChange={setSelMol} options={[{value:"",label:"— Select molecule to see account potential —"},...DRUGS.map(d=>({value:d.molecule,label:`${d.drug} (${d.molecule}) — $${d.revenue}B`}))]} placeholder="🔍 Select molecule..." style={{minWidth:350}}/>
+      <Select value={selMol} onChange={setSelMol} options={[{value:"",label:"— Select molecule to see account potential —"},...DRUGS.map(d=>({value:d.molecule,label:`${d.drug} (${d.molecule}) — $${d.revenue}B`}))]} placeholder="🔍 Select molecule..." style={{minWidth:m?0:350}}/>
     </div>
 
     {!selMol && <div>
@@ -979,7 +992,7 @@ function PayerTab(){
 
     {selMol && drug && filteredAccounts && <div>
       {/* Summary stats */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:8,marginBottom:16}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8,marginBottom:16}}>
         <Stat l="Molecule" v={drug.drug} c="#6d5cff" sub={selMol}/>
         <Stat l="Market Revenue" v={`$${drug.revenue}B`} c="#8b7fff"/>
         <Stat l="Key Accounts" v={filteredAccounts.length} c="#00d4aa"/>
@@ -1002,7 +1015,7 @@ function PayerTab(){
       {/* Account-level waterfall chart */}
       <Crd style={{marginBottom:14}}>
         <Title sub="Annual revenue potential by account ($M) — ranked by opportunity size">Account Revenue Potential — {drug.drug}</Title>
-        <ResponsiveContainer width="100%" height={Math.max(180,filteredAccounts.length*35)}>
+        <ResponsiveContainer width="100%" height={Math.max(m?140:180,filteredAccounts.length*(m?28:35))}>
           <BarChart data={filteredAccounts} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/>
             <XAxis type="number" tick={{fontSize:10,fill:C.muted}} tickFormatter={v=>`$${v}M`}/>
@@ -1042,7 +1055,8 @@ function PayerTab(){
   </div>;
 }
 
-function SupplyTab(){return <div><Title sub="CMO capacity, facility approvals, manufacturing signals">🏭 Supply Chain Intelligence</Title>{SUPPLY_CHAIN.map((s,i)=><Crd key={i} style={{marginBottom:8,borderLeft:`3px solid ${s.signal==="strong"?"#6d5cff":"#ff8c42"}`}}>
+function SupplyTab(){
+  const m=useMobile();return <div><Title sub="CMO capacity, facility approvals, manufacturing signals">🏭 Supply Chain Intelligence</Title>{SUPPLY_CHAIN.map((s,i)=><Crd key={i} style={{marginBottom:8,borderLeft:`3px solid ${s.signal==="strong"?"#6d5cff":"#ff8c42"}`}}>
   <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:6}}><div><div style={{fontSize:13,fontWeight:700,color:C.bright}}>{s.co} <span style={{color:C.muted,fontSize:10}}>({s.type})</span></div><div style={{fontSize:11,color:"#8b7fff",marginTop:1}}>{s.event}</div></div><Bdg s={s.signal}/></div>
   <div style={{fontSize:11,color:C.text,lineHeight:1.5,marginTop:8}}>{s.detail}</div>
   <div style={{marginTop:8,padding:"8px 12px",background:"rgba(0,212,170,0.03)",borderRadius:6,border:"1px solid rgba(0,212,170,0.08)"}}><div style={{fontSize:9,color:"#00d4aa",fontWeight:600}}>IMPLICATION</div><div style={{fontSize:11,color:C.text,lineHeight:1.5}}>{s.implication}</div></div>
@@ -1051,6 +1065,7 @@ function SupplyTab(){return <div><Title sub="CMO capacity, facility approvals, m
 
 // CHANGE 6: Global tab with molecule dropdown
 function GlobalTab(){
+  const m=useMobile();
   const [molSearch, setMolSearch] = useState("");
 
   // Build per-molecule regulatory status from DRUGS + REG_FILINGS data
@@ -1087,7 +1102,7 @@ function GlobalTab(){
         <div style={{fontSize:14,fontWeight:700,color:C.bright}}>📋 {molSearch} — Regulatory Overview</div>
         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}><Lnk l="FDA" u={BL.fda(molSearch)}/><Lnk l="EMA" u={BL.ema(molSearch)}/><Lnk l="Purple Book" u={BL.pb(molSearch)}/><Lnk l="ClinicalTrials" u={BL.ct(molSearch)}/><Lnk l="NMPA" u={BL.nmpa()}/><Lnk l="Patents" u={BL.pat(molSearch)}/></div>
       </div>
-      {molData?.drug && <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8}}>
+      {molData?.drug && <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8}}>
         <Stat l="US Approved" v={molData.approvedCount} c="#10b981"/>
         <Stat l="In Development" v={molData.pendingCount} c="#f59e0b"/>
         <Stat l="Total Filings" v={molData.filings.length} c="#6366f1"/>
@@ -1095,10 +1110,10 @@ function GlobalTab(){
       </div>}
       {!molData?.drug && <div style={{fontSize:12,color:C.text,padding:"8px 0"}}>Molecule not in tracked database. Use regulatory links above to research.</div>}
     </Crd>}
-    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:12}}>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:12}}>
       {GLOBAL_REG.map((g,i)=>{ const rd = getRegionData(g.region, g); return <Crd key={i}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:26}}>{g.flag}</span><div><div style={{fontSize:14,fontWeight:700,color:C.bright}}>{g.region}</div><div style={{fontSize:11,color:C.muted}}>{g.reg} · {g.pathway}</div></div></div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+        <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:8,marginBottom:10}}>
           <div style={{padding:"8px 10px",background:"rgba(16,185,129,0.06)",borderRadius:6}}><div style={{fontSize:10,color:C.muted}}>Approved</div><div style={{fontSize:18,fontWeight:800,color:"#10b981",fontFamily:mono}}>{rd.approved}</div></div>
           <div style={{padding:"8px 10px",background:"rgba(245,158,11,0.06)",borderRadius:6}}><div style={{fontSize:10,color:C.muted}}>Pending</div><div style={{fontSize:18,fontWeight:800,color:"#f59e0b",fontFamily:mono}}>{rd.pending}</div></div>
         </div>
@@ -1110,10 +1125,11 @@ function GlobalTab(){
   </div>;
 }
 
-function MATab(){return <div><Title sub="Acquisition and partnership targets">🎯 M&A Targets</Title>{MA_TARGETS.map((t,i)=><Crd key={i} style={{marginBottom:10,borderLeft:`3px solid ${t.val==="Attractive"?"#00d4aa":t.val==="Moderate"?"#ff8c42":"#a78bfa"}`}}>
+function MATab(){
+  const m=useMobile();return <div><Title sub="Acquisition and partnership targets">🎯 M&A Targets</Title>{MA_TARGETS.map((t,i)=><Crd key={i} style={{marginBottom:10,borderLeft:`3px solid ${t.val==="Attractive"?"#00d4aa":t.val==="Moderate"?"#ff8c42":"#a78bfa"}`}}>
   <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:6}}><div><div style={{fontSize:15,fontWeight:700,color:C.bright}}>{t.co}</div><div style={{fontSize:11,color:C.muted}}>{t.hq} · MCap: {t.mcap}</div></div>
     <span style={{padding:"3px 12px",borderRadius:6,fontSize:10,fontWeight:600,background:t.val==="Attractive"?"rgba(0,212,170,0.1)":"rgba(168,85,247,0.1)",color:t.val==="Attractive"?"#00d4aa":"#a78bfa"}}>{t.val}</span></div>
-  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:12}}>
+  <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:10,marginTop:12}}>
     <div style={{padding:"10px 12px",background:"rgba(0,212,170,0.03)",borderRadius:6}}><div style={{fontSize:9,color:"#00d4aa",fontWeight:600}}>STRENGTHS</div><div style={{fontSize:11,color:C.text,lineHeight:1.6}}>{t.strength}</div></div>
     <div style={{padding:"10px 12px",background:"rgba(255,77,106,0.03)",borderRadius:6}}><div style={{fontSize:9,color:"#ff4d6a",fontWeight:600}}>WEAKNESSES</div><div style={{fontSize:11,color:C.text,lineHeight:1.6}}>{t.weakness}</div></div>
   </div>
@@ -1121,8 +1137,9 @@ function MATab(){return <div><Title sub="Acquisition and partnership targets">�
   <div style={{marginTop:6}}><Lnk l="Investor Relations" u={t.link}/></div>
 </Crd>)}</div>}
 
-function BenchmarkTab(){return <div><Title sub="LOE preparedness peer comparison">📊 Benchmarking</Title>
-  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
+function BenchmarkTab(){
+  const m=useMobile();return <div><Title sub="LOE preparedness peer comparison">📊 Benchmarking</Title>
+  <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:m?10:14,marginBottom:16}}>
     <Crd><div style={{fontSize:12,fontWeight:700,color:C.bright,marginBottom:10}}>LOE Exposure vs Preparedness</div>
       <ResponsiveContainer width="100%" height={250}><ScatterChart><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis type="number" dataKey="loeExp" tick={{fontSize:10,fill:C.muted}} label={{value:"LOE Exposure %",position:"bottom",fontSize:9,fill:C.muted}}/><YAxis type="number" dataKey="overall" tick={{fontSize:10,fill:C.muted}} label={{value:"Preparedness",angle:-90,position:"left",fontSize:9,fill:C.muted}}/><Tooltip content={({active,payload})=>{if(!active||!payload?.length)return null;const d=payload[0].payload;return <div style={{background:"rgba(10,15,28,0.95)",border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 12px",fontSize:11}}><div style={{color:d.color,fontWeight:700}}>{d.co}</div><div style={{color:C.text}}>Exposure: {d.loeExp}% · Score: {d.overall}</div></div>}}/><Scatter data={BENCHMARKS}>{BENCHMARKS.map((c,i)=><Cell key={i} fill={c.color}/>)}</Scatter></ScatterChart></ResponsiveContainer>
       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:6,justifyContent:"center"}}>{BENCHMARKS.map((c,i)=><span key={i} style={{fontSize:10,color:c.color,fontWeight:600,display:"flex",alignItems:"center",gap:3}}><span style={{width:8,height:8,borderRadius:4,background:c.color}}/>{c.co}</span>)}</div>
@@ -1143,9 +1160,10 @@ function BenchmarkTab(){return <div><Title sub="LOE preparedness peer comparison
 </div>}
 
 function BriefTab(){
+  const m=useMobile();
   const [brief,setBrief]=useState("");const[gen,setGen]=useState(false);
   const generate=async()=>{setGen(true);try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:`Pharma patent cliff analyst. Write executive brief (6-8 bullets) from signals:\n${SIGNALS.slice(0,6).map(s=>`${s.date}: [${s.sev}] ${s.type} — ${s.drug}: ${s.detail}`).join("\n")}\nFormat: emoji urgency (🔴🟠🟡) + 1-2 sentences each.`}]})});const d=await r.json();setBrief(d.content?.[0]?.text||"Generated.")}catch{setBrief("🔴 ELIQUIS: Delaware court sends all 5 patents to trial March 2026. $18B at risk. Generic launch probability rising.\n\n🔴 ELIQUIS: Dr. Reddy's Para IV adds another entrant. Multi-generic Day-1 launch increasingly likely.\n\n🟠 KEYTRUDA: Biocon HERITAGE-1 meets endpoint (ORR 45.2% vs 44.8%). First pembrolizumab biosimilar pivotal data — $25B franchise timeline now concrete.\n\n🟠 STELARA: Express Scripts + CVS both prefer Wezlana. >200M lives with biosimilar-preferred formularies.\n\n🟠 EYLEA: EMA positive opinion for SB15. EU launch Q2 2026, 12 months ahead of US LOE.\n\n🟡 SAMSUNG BIOLOGICS: $1.5B Plant 5 signals long-term biosimilar demand confidence.\n\n🟡 DUPIXENT: Harbour BioMed hiring 12 IL-4 positions — early but growing threat to Sanofi/Regeneron.")}setGen(false)};
-  return <div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><Title sub="AI-curated intelligence digest">📧 Weekly Brief</Title><button onClick={generate} disabled={gen} style={{padding:"8px 18px",background:gen?"transparent":"linear-gradient(135deg,#4a3dcc,#6d5cff)",border:"1px solid rgba(109,92,255,0.3)",borderRadius:8,color:"#fff",fontSize:11,fontWeight:600,cursor:gen?"not-allowed":"pointer"}}>{gen?"⏳ Generating...":"🤖 Generate AI Brief"}</button></div>
+  return <div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,marginBottom:16}}><Title sub="AI-curated intelligence digest">📧 Weekly Brief</Title><button onClick={generate} disabled={gen} style={{padding:"8px 18px",background:gen?"transparent":"linear-gradient(135deg,#4a3dcc,#6d5cff)",border:"1px solid rgba(109,92,255,0.3)",borderRadius:8,color:"#fff",fontSize:11,fontWeight:600,cursor:gen?"not-allowed":"pointer"}}>{gen?"⏳ Generating...":"🤖 Generate AI Brief"}</button></div>
     {brief&&<Crd style={{marginBottom:16,borderColor:"rgba(109,92,255,0.2)"}}><div style={{fontSize:12,fontWeight:700,color:C.bright,marginBottom:8}}>🤖 AI Brief — Week of Feb 17-23, 2026</div><div style={{fontSize:12,color:C.text,lineHeight:1.8,whiteSpace:"pre-wrap"}}>{brief}</div></Crd>}
     <Title sub="Past 14 days">All Signals</Title>{SIGNALS.map((s,i)=><div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"10px 14px",marginBottom:5,display:"flex",gap:10,borderLeft:`3px solid ${sevC(s.sev)}`}}>
       <div style={{minWidth:60}}><div style={{fontSize:10,color:C.muted}}>{s.date}</div><span style={{fontSize:9,padding:"1px 6px",borderRadius:4,background:`${sevC(s.sev)}15`,color:sevC(s.sev),fontWeight:600,textTransform:"uppercase"}}>{s.sev}</span></div>
@@ -1156,6 +1174,7 @@ function BriefTab(){
 
 // CHANGE 7: Strategy with company selection
 function StrategyTab(){
+  const m=useMobile();
   const [userCo, setUserCo] = useState("");
   const co = COMPANIES.find(c=>c.name===userCo);
   const recs=[
@@ -1165,13 +1184,13 @@ function StrategyTab(){
     {who:"Investor",icon:"📈",c:"#ff4d6a",items:[{t:"Patent Cliff Scoring",d:">30% rev at risk → underperform 800-1200bps.",u:`https://www.sec.gov/cgi-bin/browse-edgar?company=&CIK=&type=10-K&action=getcompany`},{t:"Signal Alpha",d:"Patent challenges precede announcements by 6-12m.",u:`https://www.courtlistener.com/?q=paragraph+IV+biosimilar&type=r`}]},
   ];
   return <div>
-    <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:16}}>
+    <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:16}}>
       <Title>💡 Strategic Recommendations</Title>
       <Select value={userCo} onChange={setUserCo} options={COMPANIES.map(c=>c.name)} placeholder="🏢 Select your organization..."/>
     </div>
     {co&&<Crd style={{marginBottom:16,borderColor:"rgba(109,92,255,0.2)",background:"rgba(109,92,255,0.02)"}}>
       <div style={{fontSize:13,fontWeight:700,color:C.bright,marginBottom:10}}>🏢 {co.name} — Tailored Strategic Assessment</div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+      <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:10}}>
         <div style={{padding:"10px 14px",background:"rgba(0,212,170,0.03)",borderRadius:8}}><div style={{fontSize:10,color:"#00d4aa",fontWeight:600,marginBottom:4}}>YOUR STRENGTHS</div>{co.strengths.map((s,i)=><div key={i} style={{fontSize:11,color:C.text,lineHeight:1.7}}>• {s}</div>)}</div>
         <div style={{padding:"10px 14px",background:"rgba(255,77,106,0.03)",borderRadius:8}}><div style={{fontSize:10,color:"#ff4d6a",fontWeight:600,marginBottom:4}}>YOUR VULNERABILITIES</div>{co.weaknesses.map((s,i)=><div key={i} style={{fontSize:11,color:C.text,lineHeight:1.7}}>• {s}</div>)}</div>
       </div>
@@ -1179,7 +1198,7 @@ function StrategyTab(){
     </Crd>}
     {recs.map((r,i)=><Crd key={i} style={{marginBottom:10}}>
       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:12}}><span style={{fontSize:18}}>{r.icon}</span><span style={{fontSize:13,fontWeight:700,color:r.c}}>For {r.who}</span></div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:8}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:8}}>
         {r.items.map((item,j)=><div key={j} style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${C.border}`,borderRadius:8,padding:"10px 12px",borderTop:`2px solid ${r.c}`}}>
           <div style={{fontSize:11,fontWeight:700,color:C.bright,marginBottom:3}}>{item.t}</div>
           <div style={{fontSize:10,color:C.text,lineHeight:1.6,marginBottom:6}}>{item.d}</div>
@@ -1194,6 +1213,7 @@ function StrategyTab(){
 // NEW TAB A: MY PORTFOLIO DASHBOARD
 // ═══════════════════════════════════════════
 function PortfolioTab() {
+  const m=useMobile();
   const [myCo, setMyCo] = useState("");
   const co = COMPANIES.find(c=>c.name===myCo);
 
@@ -1236,8 +1256,8 @@ function PortfolioTab() {
   });
 
   return <div>
-    <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:16}}>
-      <Select value={myCo} onChange={setMyCo} options={COMPANIES.map(c=>c.name)} placeholder="🏢 Select your organization to personalize..." style={{minWidth:350}}/>
+    <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:16}}>
+      <Select value={myCo} onChange={setMyCo} options={COMPANIES.map(c=>c.name)} placeholder="🏢 Select your organization to personalize..." style={{minWidth:m?0:350}}/>
       {co&&<div style={{fontSize:11,color:"#a99fff"}}>{co.type} · {co.hq}</div>}
     </div>
 
@@ -1250,7 +1270,7 @@ function PortfolioTab() {
       {/* Show full market heat map even without company selection */}
       <Crd style={{marginTop:14}}>
         <Title sub="All tracked drugs sorted by time-to-LOE">Market-Wide Patent Cliff Heat Map</Title>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:6}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:6}}>
           {heatData.map((d,i)=>{
             const urg = d.days<0?"expired":d.days<365?"critical":d.days<730?"high":d.days<1460?"medium":"low";
             return <div key={i} style={{padding:"10px 12px",borderRadius:8,background:C.card2,border:`1px solid ${C.border}`,borderLeft:`3px solid ${urgColors[urg]}`}}>
@@ -1267,7 +1287,7 @@ function PortfolioTab() {
       </Crd>
     </div>:<div>
       {/* Company selected — personalized portfolio */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:8,marginBottom:16}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8,marginBottom:16}}>
         <Stat l="Your Drugs" v={myDrugs.length} c="#6d5cff" sub={`of ${DRUGS.length} tracked`}/>
         <Stat l="Revenue at Risk" v={`$${totalAtRisk.toFixed(1)}B`} c="#ff4d6a" sub="Originator exposure"/>
         <Stat l="Market Opportunity" v={`$${totalOpp.toFixed(1)}B`} c="#00d4aa" sub="Biosimilar/generic TAM"/>
@@ -1291,7 +1311,7 @@ function PortfolioTab() {
           const maxVal=Math.max(0,...waterfallData.map(d=>d.yr1Val));
           const yMin=Math.floor(minVal*1.2);
           const yMax=Math.ceil(maxVal*1.2)||1;
-          return <ResponsiveContainer width="100%" height={240}>
+          return <ResponsiveContainer width="100%" height={m?180:240}>
             <BarChart data={waterfallData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/>
               <XAxis dataKey="drug" tick={{fontSize:11,fill:C.muted}}/>
@@ -1316,7 +1336,7 @@ function PortfolioTab() {
 
       {/* Drug Cards */}
       <Title sub="Your competitive position per molecule">Portfolio Positions</Title>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10,marginBottom:14}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(250px,1fr))",gap:10,marginBottom:14}}>
         {myDrugs.map((d,i)=>{
           const prog = d.comp?pPct(d.comp.phase):0;
           return <Crd key={i} style={{borderLeft:`3px solid ${d.isOrig?"#ff4d6a":"#00d4aa"}`,padding:"14px 16px"}}>
@@ -1324,7 +1344,7 @@ function PortfolioTab() {
               <div><div style={{fontSize:14,fontWeight:700,color:C.bright}}>{d.drug.drug}</div><div style={{fontSize:10,color:C.muted}}>{d.drug.molecule} · {d.drug.therapyArea}</div></div>
               <span style={{padding:"2px 8px",borderRadius:5,fontSize:9,fontWeight:700,background:d.isOrig?"rgba(255,77,106,0.1)":"rgba(0,212,170,0.1)",color:d.isOrig?"#ff4d6a":"#00d4aa"}}>{d.role}</span>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}>
+            <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr 1fr",gap:6,marginBottom:8}}>
               <div><div style={{fontSize:8,color:C.muted}}>Revenue</div><div style={{fontSize:14,fontWeight:800,color:"#6d5cff",fontFamily:mono}}>${d.drug.revenue}B</div></div>
               <div><div style={{fontSize:8,color:C.muted}}>LOE</div><div style={{fontSize:14,fontWeight:800,color:urgColors[d.urgency],fontFamily:mono}}>{d.days<0?"Expired":fDays(d.days)}</div></div>
               <div><div style={{fontSize:8,color:C.muted}}>Competitors</div><div style={{fontSize:14,fontWeight:800,color:C.text,fontFamily:mono}}>{d.drug.competitors.length}</div></div>
@@ -1344,7 +1364,7 @@ function PortfolioTab() {
       {/* Aggregate exposure chart */}
       <Crd>
         <Title sub="Combined revenue trajectory across your portfolio">Aggregate Portfolio Exposure</Title>
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={m?160:220}>
           <BarChart data={myDrugs.map(d=>({drug:d.drug.drug,revenue:d.drug.revenue,role:d.isOrig?"At Risk":"Opportunity"}))}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="drug" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}}/><Tooltip content={<CTip/>}/>
             <Bar dataKey="revenue" name="Revenue $B" radius={[4,4,0,0]}>{myDrugs.map((d,i)=><Cell key={i} fill={d.isOrig?"#ff4d6a":"#00d4aa"}/>)}</Bar>
           </BarChart>
@@ -1362,6 +1382,7 @@ function PortfolioTab() {
 // NEW TAB B: TIMELINE / GANTT VIEW
 // ═══════════════════════════════════════════
 function TimelineTab() {
+  const m=useMobile();
   const [filter, setFilter] = useState("all");
   const now = new Date();
   const startYear = 2024;
@@ -1475,7 +1496,7 @@ function TimelineTab() {
     {/* Key milestones summary */}
     <Crd style={{ marginTop: 14 }}>
       <Title sub="Next 24 months">Key Upcoming Milestones</Title>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 8 }}>
         {events.filter(e => {
           const ed = new Date(e.date);
           return ed > now && ed < new Date(now.getTime() + 730 * 864e5);
@@ -1496,6 +1517,7 @@ function TimelineTab() {
 // NEW TAB C: REVENUE IMPACT CALCULATOR
 // ═══════════════════════════════════════════
 function RevenueCalcTab() {
+  const m=useMobile();
   const [myCo, setMyCo] = useState("");
   const [selDrug, setSelDrug] = useState(0);
   const [myRev, setMyRev] = useState("");
@@ -1570,7 +1592,7 @@ function RevenueCalcTab() {
     {/* Input panel */}
     <Crd style={{ marginBottom: 14, borderColor: "rgba(109,92,255,0.2)", background: "rgba(109,92,255,0.02)" }}>
       <div style={{ fontSize: 12, fontWeight: 700, color: C.bright, marginBottom: 14 }}>📊 Input Your Parameters</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 14 }}>
         <div>
           <div style={{ fontSize: 11, color: C.text, fontWeight: 600, marginBottom: 5 }}>{isOrig?"Your Annual Revenue ($B)":"Originator Annual Revenue ($B)"}</div>
           <input type="number" step="0.1" value={myRev} onChange={e => setMyRev(e.target.value)} placeholder={`${d.revenue} (default)`} style={{ width: "100%", padding: "8px 12px", background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 8, color: C.bright, fontSize: 13, fontFamily: mono, outline: "none" }} />
@@ -1603,14 +1625,14 @@ function RevenueCalcTab() {
     </Crd>
 
     {/* Impact Summary Cards — adapt to originator vs competitor */}
-    {isComp ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, marginBottom: 16 }}>
+    {isComp ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(100px,1fr))", gap: 8, marginBottom: 16 }}>
       <Stat l="Addressable Market" v={`$${actualRev.toFixed(1)}B`} c="#6d5cff" />
       <Stat l="Yr1 Revenue Capture" v={`+$${yr1Gain.toFixed(2)}B`} c="#10b981" sub={`${(yr1Gain / actualRev * 100).toFixed(1)}% of market`} />
       <Stat l="Yr2 Revenue Capture" v={`+$${yr2Gain.toFixed(2)}B`} c="#10b981" sub={`${(yr2Gain / actualRev * 100).toFixed(1)}% of market`} />
       <Stat l="3-Yr Cumulative Revenue" v={`+$${cumulativeGain3yr.toFixed(2)}B`} c="#10b981" />
       <Stat l="Yr1 Gross Profit" v={`+$${yr1CompGP.toFixed(2)}B`} c="#00d4aa" sub={`${(100-Math.max(15,myCogs-10)).toFixed(0)}% margin`} />
       <Stat l="Your Share of Biosim" v={`${(myShareOfBiosim*100).toFixed(0)}%`} c="#8b7fff" sub={`Strength: ${myStrength}/100`} />
-    </div> : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, marginBottom: 16 }}>
+    </div> : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(100px,1fr))", gap: 8, marginBottom: 16 }}>
       <Stat l="Current Revenue" v={`$${actualRev.toFixed(1)}B`} c="#6d5cff" />
       <Stat l="Yr1 Revenue Loss" v={`-$${yr1Loss.toFixed(1)}B`} c="#ff4d6a" sub={`${(yr1Loss / actualRev * 100).toFixed(0)}% of revenue`} />
       <Stat l="Yr2 Revenue Loss" v={`-$${yr2Loss.toFixed(1)}B`} c="#ff4d6a" sub={`${(yr2Loss / actualRev * 100).toFixed(0)}% of revenue`} />
@@ -1620,10 +1642,10 @@ function RevenueCalcTab() {
     </div>}
 
     {/* Charts — adapt to originator vs competitor */}
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+    <div style={{ display: "grid", gridTemplateColumns: m?"1fr":"1fr 1fr", gap: 14, marginBottom: 14 }}>
       <Crd>
         <Title sub={isComp?"Monthly revenue capture growing post-LOE":"Monthly originator revenue decline post-LOE"}>{isComp?"Revenue Capture Trajectory":"Revenue Erosion Trajectory"}</Title>
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={m?160:220}>
           <ComposedChart data={monthlyData}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)" /><XAxis dataKey="m" tick={{ fontSize: 10, fill: C.muted }} /><YAxis tick={{ fontSize: 10, fill: C.muted }} /><Tooltip content={<CTip />} />
             {isComp ? <>
               <Area type="monotone" dataKey="myBiosimRev" stroke="#10b981" fill="rgba(16,185,129,0.15)" name="Your Monthly Rev ($B)" />
@@ -1637,7 +1659,7 @@ function RevenueCalcTab() {
       </Crd>
       <Crd>
         <Title sub={isComp?"Your cumulative revenue growth":"Erosion curve with your parameters"}>{isComp?"Cumulative Revenue Build":"Price/Volume Erosion %"}</Title>
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={m?160:220}>
           {isComp ? <AreaChart data={monthlyData.map((r,i)=>{
             const cumRev = monthlyData.slice(0,i+1).reduce((a,x)=>a+(x.myBiosimRev||0),0);
             return {...r, cumRev: +cumRev.toFixed(2)};
@@ -1689,6 +1711,7 @@ function RevenueCalcTab() {
 // NEW TAB D: COMPETITIVE BATTLECARD GENERATOR
 // ═══════════════════════════════════════════
 function BattlecardTab() {
+  const m=useMobile();
   const [selDrug, setSelDrug] = useState(0);
   const [myCo, setMyCo] = useState("");
   const [viewMode, setViewMode] = useState("full");
@@ -1785,14 +1808,14 @@ function BattlecardTab() {
           <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{d.originator} · {d.indication} · {d.therapyArea} · {d.type}</div>
           {myCo && <div style={{ fontSize: 11, color: "#a99fff", marginTop: 4 }}>Prepared for: <strong>{myCo}</strong> ({isOrig ? "Originator" : myComp ? "Competitor" : "Observer"})</div>}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: m?"1fr":"1fr 1fr", gap: 8 }}>
           <div style={{ textAlign: "center", padding: "8px 16px", borderRadius: 8, background: "rgba(109,92,255,0.06)" }}><div style={{ fontSize: 8, color: C.muted }}>REVENUE</div><div style={{ fontSize: 18, fontWeight: 800, color: "#6d5cff", fontFamily: mono }}>${d.revenue}B</div></div>
           <div style={{ textAlign: "center", padding: "8px 16px", borderRadius: 8, background: days < 365 ? "rgba(255,77,106,0.08)" : "rgba(255,140,66,0.06)" }}><div style={{ fontSize: 8, color: C.muted }}>LOE</div><div style={{ fontSize: 18, fontWeight: 800, color: days < 365 ? "#ff4d6a" : "#ff8c42", fontFamily: mono }}>{days < 0 ? "GONE" : fDays(days)}</div></div>
         </div>
       </div>
     </div>
 
-    <div style={{ display: "grid", gridTemplateColumns: viewMode === "full" ? "1fr 1fr" : "1fr", gap: 14, marginBottom: 14 }}>
+    <div style={{ display: "grid", gridTemplateColumns: m?"1fr":(viewMode === "full" ? "1fr 1fr" : "1fr"), gap: 14, marginBottom: 14 }}>
       {/* Competitive Landscape */}
       <Crd>
         <Title>⚔️ Competitive Landscape ({d.competitors.length} players)</Title>
@@ -1812,7 +1835,7 @@ function BattlecardTab() {
       {/* Market Context */}
       <Crd>
         <Title>📊 Market Context</Title>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: m?"1fr":"1fr 1fr", gap: 8, marginBottom: 10 }}>
           <div style={{ padding: "8px 10px", borderRadius: 6, background: "rgba(255,255,255,0.02)" }}><div style={{ fontSize: 9, color: C.muted }}>Erosion Speed</div><div style={{ fontSize: 13, fontWeight: 700, color: "#ff8c42" }}>{erosionRef.speed}</div></div>
           <div style={{ padding: "8px 10px", borderRadius: 6, background: "rgba(255,255,255,0.02)" }}><div style={{ fontSize: 9, color: C.muted }}>24m Erosion Est.</div><div style={{ fontSize: 13, fontWeight: 700, color: "#ff4d6a" }}>{erosionRef.e24}%</div></div>
           <div style={{ padding: "8px 10px", borderRadius: 6, background: "rgba(255,255,255,0.02)" }}><div style={{ fontSize: 9, color: C.muted }}>Dosage Forms</div><div style={{ fontSize: 10, fontWeight: 600, color: C.text }}>{d.dosageForms?.map(f => f.form.split(" ")[0]).join(", ")}</div></div>
@@ -1826,7 +1849,7 @@ function BattlecardTab() {
     {/* Talking Points */}
     <Crd style={{ marginBottom: 14 }}>
       <Title sub={myCo ? `Tailored for ${myCo} (${isOrig ? "Originator" : myComp ? "Competitor" : "Observer"})` : "Select your company for tailored points"}>💬 {talking.title}</Title>
-      <div style={{ display: "grid", gridTemplateColumns: viewMode === "full" ? "1fr 1fr" : "1fr", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: m?"1fr":(viewMode === "full" ? "1fr 1fr" : "1fr"), gap: 8 }}>
         {talking.points.map((tp, i) => <div key={i} style={{ padding: "12px 14px", borderRadius: 8, background: "rgba(255,255,255,0.02)", border: `1px solid ${C.border}` }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#a99fff", marginBottom: 6 }}>Q: {tp.q}</div>
           <div style={{ fontSize: 11, color: C.text, lineHeight: 1.7 }}>{tp.a}</div>
@@ -1835,7 +1858,7 @@ function BattlecardTab() {
     </Crd>
 
     {/* Quick Reference */}
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+    <div style={{ display: "grid", gridTemplateColumns: m?"1fr":"1fr 1fr", gap: 14 }}>
       <Crd>
         <Title>📋 Drug Quick Facts</Title>
         {[
@@ -1883,12 +1906,13 @@ const PATENT_DATA = {
   "Xarelto":{total:4,categories:[{cat:"Composition",count:1,expiry:"2024-03-28",challenged:true},{cat:"Crystal Form",count:1,expiry:"2024-08-01",challenged:true},{cat:"Method of Use",count:1,expiry:"2025-02-28",challenged:true},{cat:"Once-Daily Dosing",count:1,expiry:"2025-12-20",challenged:true}]},
 };
 function PatentTab(){
+  const m=useMobile();
   const [sel,setSel]=useState("Keytruda");
   const p=PATENT_DATA[sel];const now=new Date();
   return <div>
-    <div style={{display:"flex",gap:10,marginBottom:16,alignItems:"center"}}><Title sub="Visual patent estate per drug — thicket analysis">🔒 Patent Landscape</Title><Select value={sel} onChange={setSel} options={Object.keys(PATENT_DATA)} placeholder="Select drug..."/></div>
+    <div style={{display:"flex",gap:10,marginBottom:16,alignItems:"center",flexWrap:"wrap"}}><Title sub="Visual patent estate per drug — thicket analysis">🔒 Patent Landscape</Title><Select value={sel} onChange={setSel} options={Object.keys(PATENT_DATA)} placeholder="Select drug..."/></div>
     {p&&<div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8,marginBottom:16}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8,marginBottom:16}}>
         <Stat l="Total Patents" v={p.total} c="#6d5cff"/><Stat l="Categories" v={p.categories.length} c="#8b7fff"/><Stat l="Challenged" v={p.categories.filter(c=>c.challenged).length} c="#ff4d6a"/><Stat l="Earliest Expiry" v={p.categories.sort((a,b)=>new Date(a.expiry)-new Date(b.expiry))[0]?.expiry.substring(0,4)} c="#ff8c42"/>
       </div>
       <Crd style={{marginBottom:14}}>
@@ -1911,8 +1935,8 @@ function PatentTab(){
           })}
         </div>
       </Crd>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-        <Crd><Title>Patent Count by Category</Title><ResponsiveContainer width="100%" height={200}><BarChart data={p.categories} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis type="number" tick={{fontSize:10,fill:C.muted}}/><YAxis type="category" dataKey="cat" tick={{fontSize:9,fill:C.muted}} width={100}/><Tooltip content={<CTip/>}/><Bar dataKey="count" name="Patents" radius={[0,4,4,0]}>{p.categories.map((c,i)=><Cell key={i} fill={c.challenged?"#ff8c42":"#6d5cff"}/>)}</Bar></BarChart></ResponsiveContainer></Crd>
+      <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:m?10:14}}>
+        <Crd><Title>Patent Count by Category</Title><ResponsiveContainer width="100%" height={m?150:200}><BarChart data={p.categories} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis type="number" tick={{fontSize:10,fill:C.muted}}/><YAxis type="category" dataKey="cat" tick={{fontSize:9,fill:C.muted}} width={100}/><Tooltip content={<CTip/>}/><Bar dataKey="count" name="Patents" radius={[0,4,4,0]}>{p.categories.map((c,i)=><Cell key={i} fill={c.challenged?"#ff8c42":"#6d5cff"}/>)}</Bar></BarChart></ResponsiveContainer></Crd>
         <Crd><Title>IP Strategy Assessment</Title>
           {p.total>15?<div style={{padding:"10px 14px",borderRadius:6,background:"rgba(255,77,106,0.04)",borderLeft:"3px solid #ff4d6a",marginBottom:10}}><div style={{fontSize:12,fontWeight:700,color:"#ff4d6a"}}>Dense Thicket ({p.total} patents)</div><div style={{fontSize:11,color:C.text,lineHeight:1.6,marginTop:4}}>Multiple IP layers. Biosimilar developers face significant FTO challenges. Extended litigation expected — potential 30 Month Stays on multiple patents.</div></div>
           :p.total>8?<div style={{padding:"10px 14px",borderRadius:6,background:"rgba(255,140,66,0.04)",borderLeft:"3px solid #ff8c42",marginBottom:10}}><div style={{fontSize:12,fontWeight:700,color:"#ff8c42"}}>Moderate Estate ({p.total} patents)</div><div style={{fontSize:11,color:C.text,lineHeight:1.6,marginTop:4}}>Standard protection. Method-of-use patents may not block biosimilar entry for base molecule. Design-around strategies feasible.</div></div>
@@ -1938,22 +1962,23 @@ const DATA_340B=[
   {drug:"Xarelto",area:"Cardiology",pct340b:7,switchSpeed:"Very Fast",savingsPerPt:2400,entities:600,spend340b:0.8,biosimSave:0.5,driver:"Small molecule generic. Auto-substitution. Retail pharmacy channel dominates."},
 ];
 function Tab340B(){
+  const m=useMobile();
   const total340B=DATA_340B.reduce((a,d)=>a+d.biosimSave,0);
   return <div>
     <Title sub="340B program exposure and biosimilar switching economics by drug">🏥 340B Impact Analyzer</Title>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:8,marginBottom:16}}>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8,marginBottom:16}}>
       <Stat l="Total 340B Savings" v={`$${total340B.toFixed(1)}B/yr`} c="#00d4aa" sub="Biosimilar switching opportunity"/><Stat l="Entities Affected" v="2,400+" c="#6d5cff" sub="Hospitals & clinics"/><Stat l="Fastest Switch" v="Oncology" c="#ff4d6a" sub="55% 340B exposure"/><Stat l="Slowest Switch" v="Ophthalmology" c="#ff8c42" sub="Physician preference"/>
     </div>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
-      <Crd><Title>340B Volume Exposure by Drug (%)</Title><ResponsiveContainer width="100%" height={200}><BarChart data={DATA_340B}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="drug" tick={{fontSize:9,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,70]}/><Tooltip content={<CTip/>}/><Bar dataKey="pct340b" name="340B %" radius={[4,4,0,0]}>{DATA_340B.map((d,i)=><Cell key={i} fill={d.pct340b>40?"#ff4d6a":d.pct340b>20?"#ff8c42":"#6d5cff"}/>)}</Bar></BarChart></ResponsiveContainer></Crd>
-      <Crd><Title>Annual Biosimilar Savings Potential ($B)</Title><ResponsiveContainer width="100%" height={200}><BarChart data={DATA_340B}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="drug" tick={{fontSize:9,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}}/><Tooltip content={<CTip/>}/><Bar dataKey="biosimSave" name="Savings $B/yr" radius={[4,4,0,0]}>{DATA_340B.map((_,i)=><Cell key={i} fill="#00d4aa"/>)}</Bar></BarChart></ResponsiveContainer></Crd>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:m?10:14,marginBottom:14}}>
+      <Crd><Title>340B Volume Exposure by Drug (%)</Title><ResponsiveContainer width="100%" height={m?150:200}><BarChart data={DATA_340B}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="drug" tick={{fontSize:9,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}} domain={[0,70]}/><Tooltip content={<CTip/>}/><Bar dataKey="pct340b" name="340B %" radius={[4,4,0,0]}>{DATA_340B.map((d,i)=><Cell key={i} fill={d.pct340b>40?"#ff4d6a":d.pct340b>20?"#ff8c42":"#6d5cff"}/>)}</Bar></BarChart></ResponsiveContainer></Crd>
+      <Crd><Title>Annual Biosimilar Savings Potential ($B)</Title><ResponsiveContainer width="100%" height={m?150:200}><BarChart data={DATA_340B}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="drug" tick={{fontSize:9,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}}/><Tooltip content={<CTip/>}/><Bar dataKey="biosimSave" name="Savings $B/yr" radius={[4,4,0,0]}>{DATA_340B.map((_,i)=><Cell key={i} fill="#00d4aa"/>)}</Bar></BarChart></ResponsiveContainer></Crd>
     </div>
     {DATA_340B.map((d,i)=><Crd key={i} style={{marginBottom:6,borderLeft:`3px solid ${d.pct340b>40?"#ff4d6a":d.pct340b>20?"#ff8c42":"#6d5cff"}`}}>
       <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:6}}>
         <div style={{fontSize:14,fontWeight:700,color:C.bright}}>{d.drug} <span style={{fontSize:11,color:C.muted}}>({d.area})</span></div>
         <div style={{display:"flex",gap:5}}><span style={{padding:"2px 8px",borderRadius:5,fontSize:10,fontWeight:600,background:"rgba(109,92,255,0.1)",color:"#8b7fff"}}>{d.pct340b}% 340B</span><span style={{padding:"2px 8px",borderRadius:5,fontSize:10,fontWeight:600,background:"rgba(0,212,170,0.1)",color:"#00d4aa"}}>Switch: {d.switchSpeed}</span></div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:6,margin:"8px 0"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:6,margin:"8px 0"}}>
         <div><div style={{fontSize:9,color:C.muted}}>Savings/Patient</div><div style={{fontFamily:mono,fontSize:12,color:"#00d4aa"}}>${d.savingsPerPt.toLocaleString()}/yr</div></div>
         <div><div style={{fontSize:9,color:C.muted}}>340B Spend</div><div style={{fontFamily:mono,fontSize:12,color:"#6d5cff"}}>${d.spend340b}B</div></div>
         <div><div style={{fontSize:9,color:C.muted}}>Biosimilar Savings</div><div style={{fontFamily:mono,fontSize:12,color:"#00d4aa"}}>${d.biosimSave}B/yr</div></div>
@@ -1999,11 +2024,12 @@ const KOLS=[
   {name:"Dr. Philip Rosenfeld",inst:"Bascom Palmer Eye",area:"Ophthalmology",drugs:["Eylea"],stance:"Skeptical",influence:80,note:"Developed anti-VEGF protocols. Cautious about ophthalmic biosimilar extrapolation."},
 ];
 function ConferenceTab(){
+  const m=useMobile();
   const [confFilter,setConfFilter]=useState("all");
   const stanceC=s=>s==="Pro-biosimilar"?"#00d4aa":s==="Skeptical"?"#ff4d6a":"#ff8c42";
   return <div>
     <div style={{display:"flex",gap:10,marginBottom:16,alignItems:"center",flexWrap:"wrap"}}><Title sub="Track presentations, abstracts, and KOL sentiment">🎤 Conference & KOL Intelligence</Title><Select value={confFilter} onChange={setConfFilter} options={[{value:"all",label:"All Conferences"},...CONFERENCES.map(c=>({value:c.conf,label:c.conf}))]} placeholder="Filter..."/></div>
-    <div style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:14}}>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr":"3fr 2fr",gap:14}}>
       <div>{CONFERENCES.filter(c=>confFilter==="all"||c.conf===confFilter).map((c,i)=><Crd key={i} style={{marginBottom:8}}>
         <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4,marginBottom:8}}>
           <div><div style={{fontSize:14,fontWeight:700,color:C.bright}}>{c.conf}</div><div style={{fontSize:10,color:C.muted}}>{c.date} · {c.loc} · {c.focus}</div></div>
@@ -2044,6 +2070,7 @@ const PRICE_DATA=[
   {drug:"Ozempic",wac:968,asp:null,bWac:null,disc:0,unit:"1mg pen 4wk",trend:[{q:"Q1'24",w:100},{q:"Q2'24",w:102},{q:"Q3'24",w:103},{q:"Q4'24",w:105},{q:"Q1'25",w:106},{q:"Q2'25",w:108},{q:"Q3'25",w:108}]},
 ];
 function PriceTab(){
+  const m=useMobile();
   const [selDrug,setSelDrug]=useState(0);
   const [myDiscount,setMyDiscount]=useState(80);
   const [channel,setChannel]=useState("all");
@@ -2084,7 +2111,7 @@ function PriceTab(){
 
   return <div>
     <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:16}}>
-      <Select value={selDrug} onChange={v=>setSelDrug(+v)} options={DRUGS.map((dr,i)=>({value:String(i),label:`${dr.drug} — ${dr.molecule} ($${dr.revenue}B)`}))} placeholder="Select molecule..." style={{minWidth:350}}/>
+      <Select value={selDrug} onChange={v=>setSelDrug(+v)} options={DRUGS.map((dr,i)=>({value:String(i),label:`${dr.drug} — ${dr.molecule} ($${dr.revenue}B)`}))} placeholder="Select molecule..." style={{minWidth:m?0:350}}/>
     </div>
 
     <Title sub="Plan your pricing strategy with competitive positioning and channel economics">💲 Pricing Strategy Planner — {d.drug}</Title>
@@ -2112,10 +2139,10 @@ function PriceTab(){
     </Crd>
 
     {/* Price Positioning vs Competitors */}
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:m?10:14,marginBottom:14}}>
       <Crd>
         <Title sub="Your WAC vs originator and biosimilar competitors">Competitive Price Map</Title>
-        <ResponsiveContainer width="100%" height={240}>
+        <ResponsiveContainer width="100%" height={m?180:240}>
           <BarChart data={[
             {name:d.originator+" (Orig)",wac:origWAC,fill:"#ff4d6a"},
             ...compWACs.map(c=>({name:c.name,wac:Math.round(c.wac),fill:"#6d5cff"})),
@@ -2131,7 +2158,7 @@ function PriceTab(){
       </Crd>
       <Crd>
         <Title sub="Expected price trajectory over 36 months">Price Erosion Forecast</Title>
-        <ResponsiveContainer width="100%" height={240}>
+        <ResponsiveContainer width="100%" height={m?180:240}>
           <LineChart data={priceTrajectory.map(r=>({...r,origWAC:Math.round(r.origWAC),myWAC:Math.round(r.myWAC),avgBiosim:Math.round(r.avgBiosim)}))}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/>
             <XAxis dataKey="period" tick={{fontSize:9,fill:C.muted}}/>
@@ -2172,7 +2199,7 @@ function PriceTab(){
     {/* Pricing Strategy Recommendations */}
     <Crd style={{marginBottom:14}}>
       <Title sub="Based on your discount, competitor landscape, and channel dynamics">🧭 Pricing Strategy Recommendations</Title>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+      <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr 1fr",gap:10}}>
         <div style={{padding:"12px 14px",borderRadius:8,background:"rgba(16,185,129,0.04)",border:"1px solid rgba(16,185,129,0.15)"}}>
           <div style={{fontSize:10,color:"#10b981",fontWeight:700,marginBottom:4}}>💲 LAUNCH PRICE</div>
           <div style={{fontSize:18,fontWeight:800,color:C.bright,fontFamily:mono}}>${Math.round(myTargetWAC).toLocaleString()}</div>
@@ -2233,6 +2260,7 @@ const REG_FILINGS=[
   {drug:"Xarelto",app:"Lupin rivaroxaban",type:"ANDA",filed:"2022-06-01",pdufa:"2025-03-03",status:"Approved",notes:"First generic Xarelto (2.5mg). Launched Mar 2025. Additional strengths rolling out 2025."},
 ];
 function RegFilingTab(){
+  const m=useMobile();
   const [filter,setFilter]=useState("all");
   const statusC=s=>s==="Approved"?"#00d4aa":s==="Under Review"?"#6d5cff":s==="Filed"?"#ff8c42":s==="Tentative Approval"?"#fbbf24":"#5a6380";
   const raw=filter==="all"?REG_FILINGS:REG_FILINGS.filter(f=>f.drug===filter);
@@ -2252,7 +2280,7 @@ function RegFilingTab(){
     return bDate.localeCompare(aDate);
   });
   return <div>
-    <div style={{display:"flex",gap:10,marginBottom:16,alignItems:"center"}}><Title sub="BLA, ANDA, and sBLA submissions — sorted by filing stage & date">📋 Regulatory Filing Tracker</Title><Select value={filter} onChange={setFilter} options={[{value:"all",label:"All Drugs"},...[...new Set(REG_FILINGS.map(f=>f.drug))].map(d=>({value:d,label:d}))]} placeholder="Filter..."/></div>
+    <div style={{display:"flex",gap:10,marginBottom:16,alignItems:"center",flexWrap:"wrap"}}><Title sub="BLA, ANDA, and sBLA submissions — sorted by filing stage & date">📋 Regulatory Filing Tracker</Title><Select value={filter} onChange={setFilter} options={[{value:"all",label:"All Drugs"},...[...new Set(REG_FILINGS.map(f=>f.drug))].map(d=>({value:d,label:d}))]} placeholder="Filter..."/></div>
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8,marginBottom:16}}>
       <Stat l="Total Filings" v={REG_FILINGS.length} c="#6d5cff"/><Stat l="Not Yet Filed" v={REG_FILINGS.filter(f=>f.filed==="Not yet filed"||f.status==="Phase III").length} c="#5a6380"/><Stat l="Under Review" v={REG_FILINGS.filter(f=>f.status==="Under Review").length} c="#ff8c42"/><Stat l="Tentative" v={REG_FILINGS.filter(f=>f.status==="Tentative Approval").length} c="#fbbf24"/><Stat l="Approved" v={REG_FILINGS.filter(f=>f.status==="Approved").length} c="#00d4aa"/>
     </div>
@@ -2261,7 +2289,7 @@ function RegFilingTab(){
         <div><div style={{fontSize:13,fontWeight:700,color:C.bright}}>{f.app} <span style={{fontSize:10,color:C.muted}}>— {f.drug}</span></div><div style={{fontSize:10,color:"#8b7fff"}}>{f.type}</div></div>
         <span style={{padding:"3px 10px",borderRadius:6,fontSize:10,fontWeight:600,background:`${statusC(f.status)}15`,color:statusC(f.status)}}>{f.status}</span>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}}>
+      <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:8,marginTop:8}}>
         <div><div style={{fontSize:9,color:C.muted}}>Filed</div><div style={{fontSize:11,color:f.filed==="Not yet filed"?"#5a6380":C.text,fontStyle:f.filed==="Not yet filed"?"italic":"normal"}}>{f.filed}</div></div>
         <div><div style={{fontSize:9,color:C.muted}}>PDUFA / Action Date</div><div style={{fontSize:11,color:f.pdufa==="TBD"?"#ff8c42":C.text,fontWeight:f.pdufa==="TBD"?600:400}}>{f.pdufa}</div></div>
       </div>
@@ -2282,12 +2310,13 @@ const INV_DATA=[
   {co:"Regeneron",ticker:"REGN",price:680,consensus:"Hold",pt:780,si:1.6,kwTrend:[{q:"Q3'24",n:4},{q:"Q4'24",n:5},{q:"Q1'25",n:7},{q:"Q2'25",n:9},{q:"Q3'25",n:15},{q:"Q4'25",n:22},{q:"Q1'26",n:28}],catalyst:"Eylea HD uptake + Dupixent indication expansion (CSU, COPD)",risk:"6 Eylea biosimilars approved, launches Q4 2026. Pavblu already at-risk."},
 ];
 function InvestorTab(){
+  const m=useMobile();
   return <div>
     <Title sub="Analyst consensus, patent cliff sentiment, and earnings call keyword tracking">📈 Investor Sentiment</Title>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
-      <Crd><Title>"Biosimilar"/"Patent Cliff" Mentions in Earnings Calls</Title><ResponsiveContainer width="100%" height={220}><LineChart data={INV_DATA[0].kwTrend.map((_,qi)=>({q:INV_DATA[0].kwTrend[qi].q,...Object.fromEntries(INV_DATA.map(d=>[d.co,d.kwTrend[qi]?.n||0]))}))}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="q" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}}/><Tooltip content={<CTip/>}/>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:m?10:14,marginBottom:14}}>
+      <Crd><Title>"Biosimilar"/"Patent Cliff" Mentions in Earnings Calls</Title><ResponsiveContainer width="100%" height={m?160:220}><LineChart data={INV_DATA[0].kwTrend.map((_,qi)=>({q:INV_DATA[0].kwTrend[qi].q,...Object.fromEntries(INV_DATA.map(d=>[d.co,d.kwTrend[qi]?.n||0]))}))}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="q" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}}/><Tooltip content={<CTip/>}/>
         {INV_DATA.map((d,i)=><Line key={i} type="monotone" dataKey={d.co} stroke={["#ff4d6a","#ff8c42","#00d4aa","#2dd4bf","#6d5cff","#a78bfa"][i]} strokeWidth={2} dot={{r:3}}/>)}<Legend wrapperStyle={{fontSize:10}}/></LineChart></ResponsiveContainer></Crd>
-      <Crd><Title>Short Interest by Company (%)</Title><ResponsiveContainer width="100%" height={220}><BarChart data={INV_DATA}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="co" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}}/><Tooltip content={<CTip/>}/><Bar dataKey="si" name="Short Interest %" radius={[4,4,0,0]}>{INV_DATA.map((d,i)=><Cell key={i} fill={d.si>2?"#ff4d6a":d.si>1?"#ff8c42":"#00d4aa"}/>)}</Bar></BarChart></ResponsiveContainer></Crd>
+      <Crd><Title>Short Interest by Company (%)</Title><ResponsiveContainer width="100%" height={m?160:220}><BarChart data={INV_DATA}><CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/><XAxis dataKey="co" tick={{fontSize:10,fill:C.muted}}/><YAxis tick={{fontSize:10,fill:C.muted}}/><Tooltip content={<CTip/>}/><Bar dataKey="si" name="Short Interest %" radius={[4,4,0,0]}>{INV_DATA.map((d,i)=><Cell key={i} fill={d.si>2?"#ff4d6a":d.si>1?"#ff8c42":"#00d4aa"}/>)}</Bar></BarChart></ResponsiveContainer></Crd>
     </div>
     {INV_DATA.map((d,i)=><Crd key={i} style={{marginBottom:6}}>
       <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:6}}>
@@ -2298,7 +2327,7 @@ function InvestorTab(){
           <span style={{padding:"2px 8px",borderRadius:5,fontSize:10,background:"rgba(255,77,106,0.06)",color:"#ff4d6a"}}>SI: {d.si}%</span>
         </div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}}>
+      <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:8,marginTop:8}}>
         <div style={{padding:"6px 10px",borderRadius:5,background:"rgba(0,212,170,0.03)"}}><div style={{fontSize:9,color:"#00d4aa",fontWeight:600}}>CATALYST</div><div style={{fontSize:10,color:C.text}}>{d.catalyst}</div></div>
         <div style={{padding:"6px 10px",borderRadius:5,background:"rgba(255,77,106,0.03)"}}><div style={{fontSize:9,color:"#ff4d6a",fontWeight:600}}>RISK</div><div style={{fontSize:10,color:C.text}}>{d.risk}</div></div>
       </div>
@@ -2310,6 +2339,7 @@ function InvestorTab(){
 // TAB: ALERT CENTER
 // ═══════════════════════════════════════════
 function AlertTab(){
+  const m=useMobile();
   const [alerts,setAlerts]=useState([
     {id:1,name:"Keytruda Phase Advance",drug:"Keytruda",trigger:"Any competitor advances phase",status:"active",fires:2,last:"Feb 19 — Biocon Phase III complete",
       urls:[{l:"ClinicalTrials.gov — Pembrolizumab Biosimilar",u:"https://clinicaltrials.gov/search?term=pembrolizumab+biosimilar"},{l:"FDA Purple Book — Keytruda",u:"https://purplebooksearch.fda.gov/search?query=pembrolizumab"},{l:"Merck 10-K (SEC)",u:"https://www.sec.gov/cgi-bin/browse-edgar?company=merck&CIK=&type=10-K&action=getcompany"}]},
@@ -2327,7 +2357,7 @@ function AlertTab(){
   const [expandedId,setExpandedId]=useState(null);
   const add=()=>{if(nn&&nt){setAlerts(p=>[...p,{id:Date.now(),name:nn,drug:nd||"All",trigger:nt,status:"active",fires:0,last:"—",urls:[{l:"FDA Drug Search",u:"https://www.accessdata.fda.gov/scripts/cder/daf/"},{l:"ClinicalTrials.gov",u:"https://clinicaltrials.gov/"},{l:"USPTO Patent Search",u:"https://patft.uspto.gov/"}]}]);setShowNew(false);setNN("");setND("");setNT("");}};
   return <div>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><Title sub="Configure triggers for real-time patent cliff intelligence. Double-click any alert to view source URLs.">🔔 Alert Center</Title><button onClick={()=>setShowNew(!showNew)} style={{padding:"8px 18px",background:"linear-gradient(135deg,#4a3dcc,#6d5cff)",border:"none",borderRadius:8,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>+ New Alert</button></div>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,marginBottom:16}}><Title sub="Configure triggers for real-time patent cliff intelligence. Double-click any alert to view source URLs.">🔔 Alert Center</Title><button onClick={()=>setShowNew(!showNew)} style={{padding:"8px 18px",background:"linear-gradient(135deg,#4a3dcc,#6d5cff)",border:"none",borderRadius:8,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>+ New Alert</button></div>
     {showNew&&<Crd style={{marginBottom:14,borderColor:"rgba(109,92,255,0.3)"}}>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 2fr auto",gap:8,alignItems:"end"}}>
         <div><div style={{fontSize:10,color:C.muted,marginBottom:3}}>Name</div><input value={nn} onChange={e=>setNN(e.target.value)} placeholder="Alert name" style={{width:"100%",padding:"7px",background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,borderRadius:6,color:C.bright,fontSize:11,outline:"none"}}/></div>
@@ -2366,6 +2396,7 @@ function AlertTab(){
 // TAB: WORKSPACE / COLLABORATION NOTES
 // ═══════════════════════════════════════════
 function WorkspaceTab(){
+  const m=useMobile();
   const [notes,setNotes]=useState([
     {id:1,drug:"Eliquis",author:"Sarah K.",date:"Feb 21",text:"Delaware ruling favors generics — brief commercial team on formulary implications.",tag:"litigation",pinned:true},
     {id:2,drug:"Keytruda",author:"Mike R.",date:"Feb 19",text:"Samsung SB27 & Amgen ABP 234 Phase III readouts expected 2025-2026. Start modeling 2029 budget impact.",tag:"clinical",pinned:true},
@@ -2409,6 +2440,7 @@ function WorkspaceTab(){
 // TAB: REPORT BUILDER / SCENARIO COMPARISON
 // ═══════════════════════════════════════════
 function ReportTab(){
+  const m=useMobile();
   const projDrugs = DRUGS.filter(d => !HISTORICAL_LOE.some(h => h.molecule === d.molecule));
   const [selDrug,setSelDrug]=useState(0);
   const [myCo,setMyCo]=useState("");
@@ -2481,7 +2513,7 @@ function ReportTab(){
 
   return <div>
     <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:16}}>
-      <Select value={selDrug} onChange={handleDrugChange} options={projDrugs.map(dr=>({value:String(DRUGS.indexOf(dr)),label:`${dr.drug} — ${dr.molecule} ($${dr.revenue}B)`}))} placeholder="Select molecule..." style={{minWidth:350}}/>
+      <Select value={selDrug} onChange={handleDrugChange} options={projDrugs.map(dr=>({value:String(DRUGS.indexOf(dr)),label:`${dr.drug} — ${dr.molecule} ($${dr.revenue}B)`}))} placeholder="Select molecule..." style={{minWidth:m?0:350}}/>
       <Select value={myCo} onChange={setMyCo} options={[{value:"",label:"— No company —"},...COMPANIES.map(c=>({value:c.name,label:`🏢 ${c.name} (${c.type})`}))]} placeholder="🏢 Select company..."/>
     </div>
     <Title sub={`Model ${d.drug} (${d.molecule}) scenarios — ${myCo?(isOrig?"Originator risk view":"Competitor opportunity view"):"Market-level view"}`}>⚔️ Scenario War Game — {d.drug}</Title>
@@ -2493,7 +2525,7 @@ function ReportTab(){
     {/* Base Case Summary */}
     <Crd style={{marginBottom:14,borderColor:"rgba(109,92,255,0.2)",background:"rgba(109,92,255,0.02)"}}>
       <div style={{fontSize:12,fontWeight:700,color:C.bright,marginBottom:8}}>📊 Current Market Factors (Base Case)</div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:8}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:8}}>
         <div style={{padding:"8px 10px",borderRadius:6,background:"rgba(255,255,255,0.02)"}}><div style={{fontSize:9,color:C.muted}}>Active Competitors</div><div style={{fontSize:16,fontWeight:800,color:"#a99fff",fontFamily:mono}}>{actualComps}</div></div>
         <div style={{padding:"8px 10px",borderRadius:6,background:"rgba(255,255,255,0.02)"}}><div style={{fontSize:9,color:C.muted}}>Interchangeable?</div><div style={{fontSize:14,fontWeight:700,color:hasInterch?"#10b981":"#ff8c42"}}>{hasInterch?"Yes":"No"}</div></div>
         <div style={{padding:"8px 10px",borderRadius:6,background:"rgba(255,255,255,0.02)"}}><div style={{fontSize:9,color:C.muted}}>Therapy Benchmark</div><div style={{fontSize:14,fontWeight:700,color:C.text}}>{erosionRef.e24}% / 24m</div></div>
@@ -2512,7 +2544,7 @@ function ReportTab(){
     {/* Scenario Controls */}
     <Crd style={{marginBottom:14,borderColor:"rgba(109,92,255,0.15)"}}>
       <div style={{fontSize:12,fontWeight:700,color:C.bright,marginBottom:10}}>🎛️ {scenarios[activeSc].name} — Parameters</div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:14}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:14}}>
         <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:5}}>Competitors <span style={{fontSize:9,color:C.muted}}>(Base: {actualComps})</span></div><input type="range" min={1} max={8} value={scenarios[activeSc].comps} onChange={e=>updateSc("comps",+e.target.value)} style={{width:"100%"}}/><div style={{textAlign:"center",fontSize:13,fontWeight:700,color:scenarios[activeSc].comps!==actualComps?"#ff4d6a":"#a99fff"}}>{scenarios[activeSc].comps}</div></div>
         <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:5}}>Your Launch Delay (months)</div><input type="range" min={0} max={24} value={scenarios[activeSc].delay} onChange={e=>updateSc("delay",+e.target.value)} style={{width:"100%"}}/><div style={{textAlign:"center",fontSize:13,fontWeight:700,color:"#ff8c42"}}>{scenarios[activeSc].delay}m</div></div>
         <div><div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:8}}>Interchangeable</div><button onClick={()=>updateSc("interch",!scenarios[activeSc].interch)} style={{padding:"7px 16px",borderRadius:8,border:`1px solid ${scenarios[activeSc].interch?"#00d4aa":C.border}`,background:scenarios[activeSc].interch?"rgba(0,212,170,0.1)":"transparent",color:scenarios[activeSc].interch?"#00d4aa":C.muted,fontSize:11,fontWeight:600,cursor:"pointer",width:"100%"}}>{scenarios[activeSc].interch?"✓ YES":"✗ NO"}</button></div>
@@ -2521,14 +2553,14 @@ function ReportTab(){
     </Crd>
 
     {/* Impact Summary */}
-    {isComp ? <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,marginBottom:16}}>
+    {isComp ? <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:10,marginBottom:16}}>
       <Stat l="Addressable Market" v={`$${d.revenue}B`} c="#6366f1"/>
       <Stat l="Yr1 Revenue Capture" v={`+$${active.yr1Gain}B`} c="#10b981" sub={`${(active.yr1Gain/d.revenue*100).toFixed(1)}% of market`}/>
       <Stat l="Yr2 Revenue Capture" v={`+$${active.yr2Gain}B`} c="#10b981"/>
       <Stat l="Yr3 Revenue Capture" v={`+$${active.yr3Gain}B`} c="#10b981"/>
       <Stat l="3-Year Total" v={`+$${(+active.yr1Gain+ +active.yr2Gain+ +active.yr3Gain).toFixed(2)}B`} c="#10b981" sub="Cumulative opportunity"/>
       <Stat l="24m Erosion" v={`${active.adj}%`} c="#ff8c42"/>
-    </div> : <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,marginBottom:16}}>
+    </div> : <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:10,marginBottom:16}}>
       <Stat l="Revenue at Risk" v={`$${d.revenue}B`} c="#6366f1"/>
       <Stat l="Yr1 Loss" v={`−$${active.yr1Loss}B`} c="#ef4444" sub={`${(active.yr1Loss/d.revenue*100).toFixed(0)}% of revenue`}/>
       <Stat l="Yr2 Loss" v={`−$${active.yr2Loss}B`} c="#ef4444"/>
@@ -2538,11 +2570,11 @@ function ReportTab(){
     </div>}
 
     {/* Charts */}
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr",gap:m?10:14,marginBottom:14}}>
       {/* Scenario comparison bar chart */}
       <Crd>
         <Title sub="Side-by-side scenario outcomes">{isComp?"Revenue Capture by Scenario":"Revenue Loss by Scenario"}</Title>
-        <ResponsiveContainer width="100%" height={220}><BarChart data={results.map(r=>({name:r.name,yr1:isComp?r.yr1Gain:r.yr1Loss,yr2:isComp?r.yr2Gain:r.yr2Loss,yr3:isComp?r.yr3Gain:r.yr3Loss}))}>
+        <ResponsiveContainer width="100%" height={m?160:220}><BarChart data={results.map(r=>({name:r.name,yr1:isComp?r.yr1Gain:r.yr1Loss,yr2:isComp?r.yr2Gain:r.yr2Loss,yr3:isComp?r.yr3Gain:r.yr3Loss}))}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/>
           <XAxis dataKey="name" tick={{fontSize:10,fill:C.muted}}/>
           <YAxis tick={{fontSize:10,fill:C.muted}} tickFormatter={v=>`$${v}B`}/>
@@ -2556,7 +2588,7 @@ function ReportTab(){
       {/* Monthly trajectory */}
       <Crd>
         <Title sub={`${scenarios[activeSc].name} — monthly trajectory`}>{isComp?"Your Revenue Build":"Revenue Erosion Trajectory"}</Title>
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={m?160:220}>
           <ComposedChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(75,85,130,0.12)"/>
             <XAxis dataKey="m" tick={{fontSize:10,fill:C.muted}}/>
@@ -2648,10 +2680,21 @@ function ReportTab(){
 // ═══════════════════════════════════════════
 export default function App(){
   const [tab,setTab]=useState("portfolio");
-  const [navOpen,setNavOpen]=useState(true);
+  const [navOpen,setNavOpen]=useState(false);
   const [refreshing,setRefreshing]=useState(false);
   const [lastRef,setLastRef]=useState(new Date());
+  const [isMobile,setIsMobile]=useState(false);
   const refresh=useCallback(()=>{setRefreshing(true);setTimeout(()=>{setLastRef(new Date());setRefreshing(false)},2e3)},[]);
+
+  useEffect(()=>{
+    const check=()=>setIsMobile(window.innerWidth<768);
+    check();
+    window.addEventListener("resize",check);
+    return()=>window.removeEventListener("resize",check);
+  },[]);
+
+  // Auto-expand nav on desktop, close on mobile
+  useEffect(()=>{if(!isMobile)setNavOpen(true);else setNavOpen(false);},[isMobile]);
 
   const tabs=[
     {k:"portfolio",l:"My Portfolio",i:"🏢",c:"Command"},{k:"warroom",l:"War Room",i:"🎖️",c:"Command"},{k:"timeline",l:"Timeline",i:"⏱️",c:"Command"},{k:"alerts",l:"Alerts",i:"🔔",c:"Command"},
@@ -2662,31 +2705,71 @@ export default function App(){
   ];
   const cats=[...new Set(tabs.map(t=>t.c))];
 
-  return <div style={{display:"flex",minHeight:"100vh",background:C.bg,fontFamily:font,color:C.text}}>
-    <style>{`@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:#4338ca #0a0e18}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#0a0e18}::-webkit-scrollbar-thumb{background:#4338ca;border-radius:3px}input::placeholder{color:#6b7280}select{cursor:pointer}textarea::placeholder{color:#6b7280}input[type=range]{height:4px;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,0.06);border-radius:2px;outline:none}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#6366f1;cursor:pointer;border:2px solid #0a0e18}`}</style>
-    <div style={{width:navOpen?220:48,background:"rgba(8,12,20,0.99)",borderRight:`1px solid ${C.border}`,padding:navOpen?"14px 8px":"14px 4px",transition:"width 0.2s",flexShrink:0,overflowY:"auto",overflowX:"hidden",display:"flex",flexDirection:"column"}}>
+  const selectTab=(k)=>{setTab(k);if(isMobile)setNavOpen(false);};
+
+  return <MobileCtx.Provider value={isMobile}>
+  <div style={{display:"flex",minHeight:"100vh",background:C.bg,fontFamily:font,color:C.text,position:"relative",overflow:"hidden"}}>
+    <style>{`@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes slideIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+*{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:#4338ca #0a0e18;-webkit-tap-highlight-color:transparent}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#0a0e18}::-webkit-scrollbar-thumb{background:#4338ca;border-radius:3px}
+input::placeholder{color:#6b7280}select{cursor:pointer}textarea::placeholder{color:#6b7280}
+input[type=range]{height:6px;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,0.06);border-radius:3px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#6366f1;cursor:pointer;border:2px solid #0a0e18}
+button{-webkit-tap-highlight-color:transparent}
+@media(max-width:767px){
+  select{font-size:14px !important;padding:10px 12px !important}
+  input[type=range]::-webkit-slider-thumb{width:24px;height:24px}
+  table{font-size:10px}
+  th,td{padding:6px 4px !important}
+}`}</style>
+
+    {/* Mobile overlay backdrop */}
+    {isMobile&&navOpen&&<div onClick={()=>setNavOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:90,backdropFilter:"blur(2px)"}}/>}
+
+    {/* Sidebar — fixed overlay on mobile, static on desktop */}
+    <div style={{
+      width:isMobile?(navOpen?260:0):(navOpen?220:48),
+      position:isMobile?"fixed":"relative",
+      left:0,top:0,bottom:0,
+      zIndex:isMobile?100:1,
+      background:"rgba(8,12,20,0.99)",
+      borderRight:`1px solid ${C.border}`,
+      padding:(!isMobile&&!navOpen)?"14px 4px":"14px 8px",
+      transition:isMobile?"transform 0.25s ease":"width 0.2s",
+      transform:isMobile?(navOpen?"translateX(0)":"translateX(-100%)"):"none",
+      flexShrink:0,overflowY:"auto",overflowX:"hidden",display:"flex",flexDirection:"column",
+    }}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingLeft:2}}>
         <div onClick={()=>setNavOpen(!navOpen)} style={{width:32,height:32,borderRadius:8,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,cursor:"pointer",flexShrink:0}}>🧬</div>
-        {navOpen&&<div><div style={{fontSize:12,fontWeight:800,color:C.bright,letterSpacing:0.3}}>PatentCliff AI</div><div style={{fontSize:8,color:C.muted,fontFamily:mono}}>Enterprise v6.0 · 21 modules</div></div>}
+        {(navOpen||isMobile)&&<div><div style={{fontSize:12,fontWeight:800,color:C.bright,letterSpacing:0.3}}>PatentCliff AI</div><div style={{fontSize:8,color:C.muted,fontFamily:mono}}>Enterprise v6.0 · 21 modules</div></div>}
       </div>
       {cats.map(cat=><div key={cat} style={{marginBottom:6}}>
-        {navOpen&&<div style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:1.8,fontWeight:700,padding:"6px 8px 3px",marginBottom:1}}>{cat}</div>}
-        {tabs.filter(t=>t.c===cat).map(t=><button key={t.k} onClick={()=>setTab(t.k)} style={{width:"100%",display:"flex",alignItems:"center",gap:7,padding:navOpen?"7px 10px":"7px 5px",borderRadius:7,border:"none",background:tab===t.k?"rgba(99,102,241,0.12)":"transparent",color:tab===t.k?"#a5b4fc":C.muted,fontSize:navOpen?12:14,fontWeight:tab===t.k?600:400,cursor:"pointer",textAlign:"left",whiteSpace:"nowrap",marginBottom:1,fontFamily:font,letterSpacing:0.1,lineHeight:1.4}}>
-          <span style={{fontSize:navOpen?13:14,flexShrink:0,opacity:tab===t.k?1:0.7}}>{t.i}</span>{navOpen&&<span>{t.l}</span>}
+        {(navOpen||isMobile)&&<div style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:1.8,fontWeight:700,padding:"6px 8px 3px",marginBottom:1}}>{cat}</div>}
+        {tabs.filter(t=>t.c===cat).map(t=><button key={t.k} onClick={()=>selectTab(t.k)} style={{width:"100%",display:"flex",alignItems:"center",gap:7,padding:(navOpen||isMobile)?"9px 10px":"7px 5px",borderRadius:7,border:"none",background:tab===t.k?"rgba(99,102,241,0.12)":"transparent",color:tab===t.k?"#a5b4fc":C.muted,fontSize:(navOpen||isMobile)?12:14,fontWeight:tab===t.k?600:400,cursor:"pointer",textAlign:"left",whiteSpace:"nowrap",marginBottom:1,fontFamily:font,letterSpacing:0.1,lineHeight:1.4}}>
+          <span style={{fontSize:(navOpen||isMobile)?13:14,flexShrink:0,opacity:tab===t.k?1:0.7}}>{t.i}</span>{(navOpen||isMobile)&&<span>{t.l}</span>}
         </button>)}
       </div>)}
-      <div style={{marginTop:"auto",paddingTop:8}}>{navOpen&&<div style={{padding:"8px",borderRadius:8,background:"rgba(99,102,241,0.04)",border:`1px solid ${C.border}`,fontSize:10,color:C.muted,lineHeight:1.4}}>{DRUGS.length} drugs · {DRUGS.reduce((a,d)=>a+d.competitors.length,0)}+ competitors<br/>Last updated: Feb 2026</div>}</div>
+      <div style={{marginTop:"auto",paddingTop:8}}>{(navOpen||isMobile)&&<div style={{padding:"8px",borderRadius:8,background:"rgba(99,102,241,0.04)",border:`1px solid ${C.border}`,fontSize:10,color:C.muted,lineHeight:1.4}}>{DRUGS.length} drugs · {DRUGS.reduce((a,d)=>a+d.competitors.length,0)}+ competitors<br/>Last updated: Feb 2026</div>}</div>
     </div>
-    <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
-      <div style={{padding:"10px 20px",borderBottom:`1px solid ${C.border}`,background:"rgba(8,12,20,0.95)",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
-        <div style={{fontSize:15,fontWeight:700,color:C.bright,letterSpacing:0.2}}>{tabs.find(t=>t.k===tab)?.i} {tabs.find(t=>t.k===tab)?.l}</div>
+
+    {/* Main content */}
+    <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0,width:isMobile?"100%":"auto"}}>
+      {/* Header */}
+      <div style={{padding:isMobile?"8px 12px":"10px 20px",borderBottom:`1px solid ${C.border}`,background:"rgba(8,12,20,0.95)",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0,gap:8}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
+          {isMobile&&<button onClick={()=>setNavOpen(true)} style={{width:36,height:36,borderRadius:8,border:`1px solid ${C.border}`,background:"transparent",color:C.bright,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>☰</button>}
+          <div style={{fontSize:isMobile?13:15,fontWeight:700,color:C.bright,letterSpacing:0.2}}>{tabs.find(t=>t.k===tab)?.i} {tabs.find(t=>t.k===tab)?.l}</div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:isMobile?4:8}}>
           {refreshing&&<span style={{fontSize:11,color:"#a5b4fc",animation:"spin 0.8s linear infinite",display:"inline-block"}}>⟳</span>}
-          <span style={{fontSize:10,color:C.muted,fontFamily:mono}}>{lastRef.toLocaleTimeString()}</span>
-          <button onClick={refresh} disabled={refreshing} style={{padding:"5px 12px",background:refreshing?"transparent":"linear-gradient(135deg,#4f46e5,#6366f1)",border:"1px solid rgba(99,102,241,0.3)",borderRadius:7,color:"#fff",fontSize:11,fontWeight:600,cursor:refreshing?"not-allowed":"pointer"}}>⟳ Refresh</button>
+          {!isMobile&&<span style={{fontSize:10,color:C.muted,fontFamily:mono}}>{lastRef.toLocaleTimeString()}</span>}
+          <button onClick={refresh} disabled={refreshing} style={{padding:isMobile?"6px 10px":"5px 12px",background:refreshing?"transparent":"linear-gradient(135deg,#4f46e5,#6366f1)",border:"1px solid rgba(99,102,241,0.3)",borderRadius:7,color:"#fff",fontSize:11,fontWeight:600,cursor:refreshing?"not-allowed":"pointer"}}>⟳{!isMobile&&" Refresh"}</button>
         </div>
       </div>
-      <div style={{flex:1,overflow:"auto",padding:16}}>
+      {/* Tab content */}
+      <div style={{flex:1,overflow:"auto",padding:isMobile?10:16,WebkitOverflowScrolling:"touch"}}>
         {tab==="portfolio"&&<PortfolioTab/>}{tab==="warroom"&&<WarRoomTab/>}{tab==="timeline"&&<TimelineTab/>}{tab==="alerts"&&<AlertTab/>}
         {tab==="historical"&&<HistoricalTab/>}{tab==="projections"&&<ProjectionsTab/>}{tab==="revcalc"&&<RevenueCalcTab/>}{tab==="pricing"&&<PriceTab/>}
         {tab==="pipeline"&&<PipelineTab/>}{tab==="litigation"&&<LitigationTab/>}{tab==="payer"&&<PayerTab/>}{tab==="patents"&&<PatentTab/>}{tab==="tab340b"&&<Tab340B/>}
@@ -2695,5 +2778,6 @@ export default function App(){
         {tab==="battlecard"&&<BattlecardTab/>}{tab==="brief"&&<BriefTab/>}{tab==="report"&&<ReportTab/>}{tab==="workspace"&&<WorkspaceTab/>}
       </div>
     </div>
-  </div>;
+  </div>
+  </MobileCtx.Provider>;
 }
